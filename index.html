@@ -162,7 +162,7 @@
             padding: 4px;
         }
 
-        /* TEXT-BADGE (DUNKEL) FÜR SETS OHNE SYMBOL (151, ASCENDED HEROES ETC.) */
+        /* TEXT-BADGE (DUNKEL) FÜR SETS OHNE SYMBOL */
         .set-badge-icon.text-only {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid var(--border-color);
@@ -372,10 +372,10 @@
         /* EXPLIZITE SETS OHNE GRAFIK-SYMBOL (151, PROMOS, ZUKÜNFTIGE SETS) */
         const TEXT_ONLY_SETS = [
             'sv03.5', 'mew', '151', 'swsh07.5', 'cel25', 'promos', 'smp', 'dpp', 'bwp', 'xyp', 
-            'misc', 'wp', 'jumb', 'tk', 'me01', 'me02', 'me03', 'me04', 'me05', '30th'
+            'misc', 'wp', 'jumb', 'tk', 'me01', 'me02', 'me03', 'me04', 'me05', '30th', 'pfl', 'mee'
         ];
 
-        /* METADATEN FÜR ZUKÜNFTIGE & HISTORISCHE SETS (MIT PREZISEN KÜRZELN) */
+        /* STRIKTE MANDANTEN-LOOKUP-TABLE: ÜBERSCHREIBT API-DATEN FÜR EXAKTE KÜRZEL & NAMEN */
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
             'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', nameEn: 'Pitch Black', nameDe: 'Dunkelnacht', total: 180 },
@@ -500,7 +500,14 @@
 
         function getSetYearAndCode(set) {
             const idClean = set.id.toLowerCase();
-            if (KNOWN_SETS_DB[idClean]) return KNOWN_SETS_DB[idClean];
+            
+            // WICHTIG: Erzwinge bekannte Werte, falls API abweichende Namen/IDs liefert
+            if (KNOWN_SETS_DB[idClean]) {
+                const dbInfo = KNOWN_SETS_DB[idClean];
+                // Name im Set-Objekt überschreiben
+                set.name = dbInfo.nameEn;
+                return dbInfo;
+            }
 
             let year = null;
             if (set.releaseDate) {

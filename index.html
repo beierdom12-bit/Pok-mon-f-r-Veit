@@ -125,7 +125,7 @@
         }
         .btn:active { transform: scale(0.97); }
         .btn-outline { background: var(--surface-card); border: 1px solid var(--border-color); color: var(--text-main); }
-        .btn-refresh { background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-color); color: #93c5fd; }
+        .btn-refresh { background: rgba(59, 130, 246, 0.15); border: 1px solid primary-color; color: #93c5fd; }
         .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; }
 
         /* REITER / AKKORDEON STYLES */
@@ -150,25 +150,19 @@
             width: 36px; 
             height: 36px; 
             border-radius: 8px; 
-            background: #ffffff; 
+            background: rgba(255, 255, 255, 0.08); 
             border: 1px solid var(--border-color); 
+            color: #93c5fd;
             display: flex; 
             align-items: center; 
             justify-content: center; 
             flex-shrink: 0; 
+            font-size: 0.65rem;
+            font-weight: 900;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
             overflow: hidden;
-            padding: 4px;
-        }
-
-        .set-badge-icon.text-only {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--border-color);
-            color: #93c5fd;
-            font-size: 0.65rem; 
-            font-weight: 900; 
-            padding: 0;
-            box-shadow: none;
+            padding: 2px;
+            text-align: center;
         }
 
         .set-badge-symbol-img { 
@@ -367,38 +361,122 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
+        /* DIREKTE ZUORDNUNG DER ECHTEN KÜRZEL AUS DEN KARTEN & DATENBANK */
         const KNOWN_SETS_DB = {
-            '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', total: 100 },
-            'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', total: 180 },
-            'me04': { year: 2026, releaseDate: '2026-05-01', code: 'CRI', total: 190 },
-            'me03': { year: 2026, releaseDate: '2026-03-01', code: 'POR', total: 175 },
-            'pfl':  { year: 2026, releaseDate: '2026-02-15', code: 'PFL', total: 94 },
-            'me02': { year: 2026, releaseDate: '2026-01-15', code: 'ASC', total: 217 },
-            'mee':  { year: 2026, releaseDate: '2026-01-01', code: 'MEE', total: 16 },
-            'me01': { year: 2025, releaseDate: '2025-11-01', code: 'MEG', total: 200 },
-            'sv10.5b': { year: 2025, releaseDate: '2025-08-15', code: 'BLK', total: 160 },
-            'sv10.5w': { year: 2025, releaseDate: '2025-08-15', code: 'WHT', total: 160 },
-            'sv10': { year: 2025, releaseDate: '2025-05-20', code: 'DRI', total: 180 },
-            'sv09': { year: 2025, releaseDate: '2025-03-28', code: 'JTG', total: 190 },
-            'sv08.5': { year: 2025, releaseDate: '2025-01-17', code: 'PRE', total: 175 },
-            'sv08': { year: 2024, releaseDate: '2024-11-08', code: 'SSP', total: 250 },
-            'sv07': { year: 2024, releaseDate: '2024-09-13', code: 'SCR', total: 170 },
-            'sv06.5': { year: 2024, releaseDate: '2024-08-02', code: 'SFA', total: 95 },
-            'sv06': { year: 2024, releaseDate: '2024-05-24', code: 'TWM', total: 220 },
-            'sv05': { year: 2024, releaseDate: '2024-03-22', code: 'TEF', total: 218 },
-            'sv04.5': { year: 2024, releaseDate: '2024-01-26', code: 'PAF', total: 240 },
-            'sv04': { year: 2023, releaseDate: '2023-11-03', code: 'PAR', total: 260 },
-            'sv03.5': { year: 2023, releaseDate: '2023-09-22', code: 'MEW', total: 207 },
-            'sv03': { year: 2023, releaseDate: '2023-08-11', code: 'OBF', total: 230 },
-            'sv02': { year: 2023, releaseDate: '2023-06-09', code: 'PAL', total: 279 },
-            'sv01': { year: 2023, releaseDate: '2023-03-31', code: 'SVI', total: 258 },
-            'swsh12.5': { year: 2023, releaseDate: '2023-01-20', code: 'CRZ', total: 230 },
-            'swsh12': { year: 2022, releaseDate: '2022-11-11', code: 'SIT', total: 245 },
-            'swsh11': { year: 2022, releaseDate: '2022-09-09', code: 'LOR', total: 247 },
-            'swsh10': { year: 2022, releaseDate: '2022-05-27', code: 'ASR', total: 246 },
-            'swsh09': { year: 2022, releaseDate: '2022-02-25', code: 'BRS', total: 216 },
-            'swsh08': { year: 2021, releaseDate: '2021-11-12', code: 'FST', total: 284 },
-            'swsh07': { year: 2021, releaseDate: '2021-08-27', code: 'EVS', total: 237 }
+            'base1': { code: 'BS', total: 102 },
+            'base2': { code: 'JU', total: 64 },
+            'base3': { code: 'FO', total: 62 },
+            'base4': { code: 'B2', total: 130 },
+            'base5': { code: 'TR', total: 83 },
+            'gym1':  { code: 'G1', total: 132 },
+            'gym2':  { code: 'G2', total: 105 },
+            'neo1':  { code: 'N1', total: 111 },
+            'neo2':  { code: 'N2', total: 105 },
+            'neo3':  { code: 'N3', total: 64 },
+            'neo4':  { code: 'N4', total: 105 },
+            'ecard1': { code: 'EX', total: 147 },
+            'ecard2': { code: 'AQ', total: 62 },
+            'ecard3': { code: 'SK', total: 182 },
+            'ex1':   { code: 'RS', total: 109 },
+            'ex2':   { code: 'SS', total: 97 },
+            'ex3':   { code: 'DR', total: 100 },
+            'ex4':   { code: 'MA', total: 97 },
+            'ex5':   { code: 'HL', total: 101 },
+            'ex6':   { code: 'RG', total: 112 },
+            'ex7':   { code: 'RR', total: 108 },
+            'ex8':   { code: 'DX', total: 107 },
+            'ex9':   { code: 'EM', total: 106 },
+            'ex10':  { code: 'UF', total: 115 },
+            'ex11':  { code: 'DS', total: 113 },
+            'ex12':  { code: 'PK', total: 100 },
+            'ex13':  { code: 'DF', total: 101 },
+            'ex14':  { code: 'PM', total: 75 },
+            'dp1':   { code: 'DP', total: 130 },
+            'dp2':   { code: 'MT', total: 124 },
+            'dp3':   { code: 'SW', total: 121 },
+            'dp4':   { code: 'GE', total: 106 },
+            'dp5':   { code: 'MD', total: 100 },
+            'dp6':   { code: 'LA', total: 146 },
+            'dp7':   { code: 'SF', total: 106 },
+            'pl1':   { code: 'PL', total: 127 },
+            'pl2':   { code: 'RR', total: 111 },
+            'pl3':   { code: 'SV', total: 147 },
+            'pl4':   { code: 'AR', total: 99 },
+            'hgss1': { code: 'HS', total: 90 },
+            'hgss2': { code: 'UL', total: 96 },
+            'hgss3': { code: 'UD', total: 90 },
+            'hgss4': { code: 'TM', total: 102 },
+            'col1':  { code: 'CL', total: 102 },
+            'bw1':   { code: 'BLW', total: 114 },
+            'bw2':   { code: 'EPO', total: 98 },
+            'bw3':   { code: 'NVI', total: 101 },
+            'bw4':   { code: 'NXD', total: 99 },
+            'bw5':   { code: 'DRX', total: 124 },
+            'bw6':   { code: 'DRV', total: 20 },
+            'bw7':   { code: 'BCR', total: 149 },
+            'bw8':   { code: 'PLS', total: 135 },
+            'bw9':   { code: 'PLF', total: 116 },
+            'bw10':  { code: 'PLB', total: 105 },
+            'bw11':  { code: 'LTR', total: 113 },
+            'xy1':   { code: 'KSS', total: 39 },
+            'xy2':   { code: 'FLF', total: 106 },
+            'xy3':   { code: 'FFI', total: 111 },
+            'xy4':   { code: 'PHF', total: 119 },
+            'xy5':   { code: 'PRC', total: 160 },
+            'xy6':   { code: 'ROS', total: 108 },
+            'xy7':   { code: 'AOR', total: 98 },
+            'xy8':   { code: 'BKT', total: 162 },
+            'xy9':   { code: 'BKP', total: 122 },
+            'xy10':  { code: 'FCO', total: 124 },
+            'xy11':  { code: 'STS', total: 114 },
+            'xy12':  { code: 'EVO', total: 108 },
+            'sm1':   { code: 'SUM', total: 149 },
+            'sm2':   { code: 'GRI', total: 145 },
+            'sm3':   { code: 'BUS', total: 147 },
+            'sm3.5': { code: 'SLG', total: 73 },
+            'sm4':   { code: 'CIN', total: 111 },
+            'sm5':   { code: 'UPR', total: 156 },
+            'sm6':   { code: 'FLI', total: 131 },
+            'sm7':   { code: 'CES', total: 168 },
+            'sm7.5': { code: 'DRM', total: 72 },
+            'sm8':   { code: 'LOT', total: 214 },
+            'sm9':   { code: 'TEU', total: 181 },
+            'sm10':  { code: 'UNB', total: 214 },
+            'sm11':  { code: 'UNM', total: 236 },
+            'sm11.5':{ code: 'HIF', total: 68 },
+            'sm12':  { code: 'CEC', total: 236 },
+            'swsh1': { code: 'SSH', total: 202 },
+            'swsh2': { code: 'RCL', total: 192 },
+            'swsh3': { code: 'DAA', total: 189 },
+            'swsh3.5':{ code: 'CPA', total: 73 },
+            'swsh4': { code: 'VIV', total: 185 },
+            'swsh4.5':{ code: 'SHF', total: 72 },
+            'swsh5': { code: 'BST', total: 163 },
+            'swsh6': { code: 'CRE', total: 198 },
+            'swsh7': { code: 'EVS', total: 203 },
+            'swsh8': { code: 'FST', total: 264 },
+            'swsh9': { code: 'BRS', total: 172 },
+            'swsh10': { code: 'ASR', total: 189 },
+            'swsh11': { code: 'LOR', total: 196 },
+            'swsh12': { code: 'SIT', total: 195 },
+            'swsh12.5':{ code: 'CRZ', total: 159 },
+            'sv1':   { code: 'SVI', total: 198 },
+            'sv2':   { code: 'PAL', total: 193 },
+            'sv3':   { code: 'OBF', total: 197 },
+            'sv3.5': { code: 'MEW', total: 165 },
+            'sv4':   { code: 'PAR', total: 182 },
+            'sv4.5': { code: 'PAF', total: 91 },
+            'sv5':   { code: 'TEF', total: 162 },
+            'sv6':   { code: 'TWM', total: 167 },
+            'sv6.5': { code: 'SFA', total: 64 },
+            'sv7':   { code: 'SCR', total: 142 },
+            'sv8':   { code: 'SSP', total: 191 },
+            '30th':  { code: '30C', total: 100 },
+            'me01':  { code: 'MEG', total: 200 },
+            'me02':  { code: 'ASC', total: 217 },
+            'me03':  { code: 'POR', total: 175 },
+            'me04':  { code: 'CRI', total: 190 },
+            'me05':  { code: 'PBL', total: 180 }
         };
 
         const trackerStatus = document.getElementById('tracker-status');
@@ -419,13 +497,12 @@
             try { localStorage.setItem(`collection_${setId}`, JSON.stringify(data)); } catch(e) {}
         }
 
-        /* HIER ERZWINGEN WIR JETZT DIE KLEINEN SYMBOLE FÜR JEDES SET */
+        /* LÄDT DAS KLEINE OFFIZIELLE SET-SYMBOL AUS DER API */
         function getPrimarySymbolUrl(setObj) {
-            const idClean = setObj.id.toLowerCase();
             if (setObj && setObj.symbol) {
                 return setObj.symbol.endsWith('.png') ? setObj.symbol : `${setObj.symbol}.png`;
             }
-            return `https://assets.tcgdex.net/en/${idClean}/symbol.png`;
+            return `https://assets.tcgdex.net/en/${setObj.id}/symbol.png`;
         }
 
         function checkIsUltraRareCard(cardName) {
@@ -439,10 +516,7 @@
 
         function getSetYearAndCode(set) {
             const idClean = set.id.toLowerCase();
-            if (KNOWN_SETS_DB[idClean]) {
-                const db = KNOWN_SETS_DB[idClean];
-                return { year: db.year, releaseDate: db.releaseDate, code: db.code };
-            }
+            let code = (KNOWN_SETS_DB[idClean] && KNOWN_SETS_DB[idClean].code) ? KNOWN_SETS_DB[idClean].code : idClean.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
 
             let year = null;
             if (set.releaseDate) {
@@ -467,7 +541,6 @@
                 else year = 2005;
             }
 
-            let code = idClean.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
             return { year: year, releaseDate: set.releaseDate || `${year}-01-01`, code: code };
         }
 
@@ -869,7 +942,7 @@
         function attemptCloseWithX() {
             const hasChanged = tempCardState.normal !== initialCardState.normal ||
                                tempCardState.reverse !== initialCardState.reverse ||
-                               tempCardState.holo !== initialCardState.holo;
+                               tempCardState.holo !== initialCardState.initialCardState;
 
             if (hasChanged) {
                 const confirmClose = confirm("Schließen ohne Speichern?\nWirklich schließen?");

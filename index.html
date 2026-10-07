@@ -576,7 +576,6 @@
                 'promos': { title: '🎁 Special & Promos', sets: [] }
             };
 
-            // ERZWINGE EINDEUTIGKEIT FÜR NAMEN UND ID
             const processedNames = new Set();
             const processedIds = new Set();
 
@@ -585,7 +584,6 @@
                 const idClean = set.id.toLowerCase();
                 const nameKey = info.nameEn.toLowerCase();
 
-                // Duplikate filtern: Wenn ID oder Name bereits dargestellt wurde, überspringen
                 if (processedIds.has(idClean) || processedNames.has(nameKey)) return;
                 
                 processedIds.add(idClean);
@@ -718,6 +716,7 @@
             renderYearAccordion(document.getElementById('series-search-input').value);
         }
 
+        /* STRIKTE SCHNITTSTELLEN-VERKOPPLUNG: LÄDT KARTEN VERLÄSSLICH AUS DEM KORREKTEN ENGLISCHEN ENKPUNKT */
         async function loadSet(setId) {
             if (!setId) return;
             currentSetId = setId;
@@ -729,19 +728,25 @@
 
             try {
                 let setData = null;
-                try {
-                    const res = await fetch(`${API_BASE_DE}/sets/${setId}`);
-                    if (res.ok) setData = await res.json();
-                } catch (e) {}
+                // Primär aus der Englischen API abrufen, um korrekte ID-Verkopplung zu garantieren
+                const resEn = await fetch(`${API_BASE_EN}/sets/${setId}`);
+                if (resEn.ok) setData = await resEn.json();
 
                 if (!setData || !setData.cards || setData.cards.length === 0) {
-                    const resEn = await fetch(`${API_BASE_EN}/sets/${setId}`);
-                    if (resEn.ok) setData = await resEn.json();
+                    const resDe = await fetch(`${API_BASE_DE}/sets/${setId}`);
+                    if (resDe.ok) setData = await resDe.json();
                 }
 
                 if (setData) {
-                    currentSetName = setData.name || 'Pokémon Set';
-                    currentSetLogo = setData.logo ? (setData.logo.endsWith('.png') ? setData.logo : `${setData.logo}.png`) : '';
+                    const idClean = setId.toLowerCase();
+                    if (KNOWN_SETS_DB[idClean]) {
+                        currentSetName = KNOWN_SETS_DB[idClean].nameEn;
+                    } else {
+                        currentSetName = setData.name || 'Pokémon Set';
+                    }
+
+                    // Logo starr an die echte Set-ID koppeln
+                    currentSetLogo = setData.logo ? (setData.logo.endsWith('.png') ? setData.logo : `${setData.logo}.png`) : `https://assets.tcgdex.net/en/${setId}/logo.png`;
                     currentCards = setData.cards || [];
                 }
 

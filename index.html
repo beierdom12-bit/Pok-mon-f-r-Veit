@@ -172,8 +172,8 @@
         }
 
         .set-badge-symbol-img { 
-            max-width: 90%; 
-            max-height: 90%; 
+            max-width: 85%; 
+            max-height: 85%; 
             object-fit: contain; 
         }
 
@@ -367,7 +367,6 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
-        /* PRÄZISE LOOKUP-TABELLE FÜR KÜRZEL & KORREKTE GESAMTZÄHLUNG */
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', total: 100 },
             'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', total: 180 },
@@ -420,11 +419,9 @@
             try { localStorage.setItem(`collection_${setId}`, JSON.stringify(data)); } catch(e) {}
         }
 
-        /* EXAKTE SYMBOLE FÜR DIE ÄLTEREN SERIEN & API-FALLBACK */
+        /* HIER ERZWINGEN WIR JETZT DIE KLEINEN SYMBOLE FÜR JEDES SET */
         function getPrimarySymbolUrl(setObj) {
             const idClean = setObj.id.toLowerCase();
-            
-            // Verwende direkt das offizielle Symbol der TCGdex-API, das genau diese kleinen Retro-Icons liefert
             if (setObj && setObj.symbol) {
                 return setObj.symbol.endsWith('.png') ? setObj.symbol : `${setObj.symbol}.png`;
             }
@@ -849,7 +846,7 @@
             document.getElementById(`var-count-${type}`).textContent = tempCardState[type];
         }
 
-        function saveCurrentStateSilectedSilently() {
+        function saveCurrentStateSilently() {
             if (activeEditCardIndex < 0) return;
             const card = currentCards[activeEditCardIndex];
             const collection = getSetCollection(currentSetId);
@@ -865,7 +862,7 @@
         }
 
         function saveAndCloseModal() {
-            saveCurrentStateSilectedSilently();
+            saveCurrentStateSilently();
             closeModalDirectly();
         }
 
@@ -891,11 +888,11 @@
 
         function navigateModal(direction) {
             if (activeEditCardIndex >= 0) {
-                saveCurrentStateSilectedSilently();
+                saveCurrentStateSilently();
             }
             let newIndex = activeEditCardIndex + direction;
             if (newIndex >= 0 && newIndex < currentCards.length) {
-                openModalByIndex(index); // Korrigiert auf openModalByIndex(newIndex)
+                openModalByIndex(newIndex);
             }
         }
 
@@ -907,12 +904,6 @@
             touchStartX = e.changedTouches[0].screenX;
         }, { passive: true });
 
-        modalContainer.addEventListener('touched', (e) => { // Korrigiert auf touchend
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        }, { passive: true });
-
-        // Event-Listener direkt auf touchend korrigiert
         modalContainer.addEventListener('touchend', (e) => {
             touchEndX = e.changedTouches[0].screenX;
             handleSwipe();
@@ -936,7 +927,7 @@
 
         document.getElementById('btn-normal-minus').addEventListener('click', () => adjustVariant('normal', -1));
         document.getElementById('btn-normal-plus').addEventListener('click', () => adjustVariant('normal', 1));
-        document.getElementById('btn-reverse-minus').addEventListener('click', () => `adjustVariant`('reverse', -1)); // Syntaxbereinigung
+        document.getElementById('btn-reverse-minus').addEventListener('click', () => adjustVariant('reverse', -1));
         document.getElementById('btn-reverse-plus').addEventListener('click', () => adjustVariant('reverse', 1));
         document.getElementById('btn-holo-minus').addEventListener('click', () => adjustVariant('holo', -1));
         document.getElementById('btn-holo-plus').addEventListener('click', () => adjustVariant('holo', 1));

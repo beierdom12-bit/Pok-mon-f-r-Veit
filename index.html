@@ -375,13 +375,15 @@
             'misc', 'wp', 'jumb', 'tk', 'me01', 'me02', 'me03', 'me04', 'me05', '30th'
         ];
 
-        /* METADATEN FÜR ZUKÜNFTIGE & HISTORISCHE SETS */
+        /* METADATEN FÜR ZUKÜNFTIGE & HISTORISCHE SETS (MIT PREZISEN KÜRZELN) */
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
             'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', nameEn: 'Pitch Black', nameDe: 'Dunkelnacht', total: 180 },
             'me04': { year: 2026, releaseDate: '2026-05-01', code: 'CRI', nameEn: 'Chaos Rising', nameDe: 'Wachsendes Chaos', total: 190 },
             'me03': { year: 2026, releaseDate: '2026-03-01', code: 'POR', nameEn: 'Perfect Order', nameDe: 'Optimale Ordnung', total: 175 },
+            'pfl':  { year: 2026, releaseDate: '2026-02-15', code: 'PFL', nameEn: 'Phantasmal Flames', nameDe: 'Phantasmal Flames', total: 180 },
             'me02': { year: 2026, releaseDate: '2026-01-15', code: 'ASC', nameEn: 'Ascended Heroes', nameDe: 'Erhabene Helden', total: 210 },
+            'mee':  { year: 2026, releaseDate: '2026-01-01', code: 'MEE', nameEn: 'Mega Evolution Energy', nameDe: 'Mega Evolution Energy', total: 16 },
             'me01': { year: 2025, releaseDate: '2025-11-01', code: 'MEG', nameEn: 'Mega Evolution', nameDe: 'Mega-Entwicklung', total: 200 },
             'sv10.5b': { year: 2025, releaseDate: '2025-08-15', code: 'BLK', nameEn: 'Black Bolt', nameDe: 'Black Bolt', total: 160 },
             'sv10.5w': { year: 2025, releaseDate: '2025-08-15', code: 'WHT', nameEn: 'White Flare', nameDe: 'White Flare', total: 160 },
@@ -527,7 +529,6 @@
             return { year: year, releaseDate: set.releaseDate || `${year}-01-01`, code: code, nameEn: set.name, nameDe: set.name };
         }
 
-        /* SCHALTET BEI FEHLENDEM SYMBOL DIREKT AUF DEN DUNKELN TEXT-BADGE UM (OHNE WEISSEN KASTEN!) */
         function handleSymbolImgError(imgEl, code) {
             const parent = imgEl.parentNode;
             if (parent) {

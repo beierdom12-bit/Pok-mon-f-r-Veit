@@ -191,13 +191,13 @@
         .pill.holo { background: rgba(245, 158, 11, 0.2); color: #fde047; }
         .card-menu-btn { position: absolute; top: 6px; left: 6px; background: rgba(15, 23, 42, 0.8); color: var(--text-muted); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; z-index: 10; border: 1px solid var(--border-color); }
 
-        /* MODAL STYLES WITH LARGE CARD IMAGE PREVIEW */
+        /* MODAL STYLES WITH LARGER CARD PREVIEW */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 12px; }
         .modal-overlay.open { display: flex; }
-        .modal-box { background: #131a29; border-radius: 18px; padding: 18px; width: 92%; max-width: 380px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .modal-box { background: #131a29; border-radius: 18px; padding: 18px; width: 95%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); border: 1px solid var(--border-color); max-height: 92vh; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
         
         .modal-card-img-container { width: 100%; display: flex; justify-content: center; margin-bottom: 12px; }
-        .modal-card-img-large { max-height: 240px; width: auto; object-fit: contain; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.6); }
+        .modal-card-img-large { max-height: 320px; width: auto; max-width: 100%; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.7); }
 
         .modal-header { font-weight: 800; font-size: 1.05rem; text-align: center; color: var(--text-main); }
         .modal-subtitle { font-size: 0.75rem; color: var(--primary-color); font-weight: 700; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; width: 100%; text-align: center; }
@@ -612,7 +612,6 @@
                 let imgUrlLow = c.image ? `${c.image}/low.webp` : `https://assets.tcgdex.net/de/${currentSetId}/${c.localId}/low.webp`;
                 let imgUrlHigh = c.image ? `${c.image}/high.webp` : `https://assets.tcgdex.net/de/${currentSetId}/${c.localId}/high.webp`;
 
-                // LONG PRESS DISPATCHER LOGIK
                 let pressTimer = null;
                 let isLongPress = false;
 
@@ -621,7 +620,7 @@
                     pressTimer = setTimeout(() => {
                         isLongPress = true;
                         openModal(c.id, c.name, imgUrlHigh, currentSetId);
-                    }, 500); // 500ms Gedrückthalten für Vorschau-Zoom
+                    }, 500);
                 };
 
                 const cancelPress = () => {
@@ -670,7 +669,6 @@
             progressFill.style.width = `${pct}%`;
         }
 
-        /* MODAL ÖFFNEN MIT GROSSER KARTENVORSCHAU UND VARIANTEN-MENÜ */
         function openModal(cardId, cardName, cardImgHigh, setId = currentSetId) {
             activeEditCardId = cardId;
             currentSetId = setId;
@@ -679,7 +677,6 @@
 
             const isUltraRare = checkIsUltraRareCard(cardName);
 
-            // Setze das große Bild
             document.getElementById('modal-card-img-large').src = cardImgHigh || `https://assets.tcgdex.net/de/${setId}/${cardData.localId || cardId}/high.webp`;
             document.getElementById('modal-card-title').textContent = cardName;
             

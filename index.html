@@ -50,6 +50,7 @@
             margin-bottom: 16px; 
             border-bottom: 1px solid var(--border-color); 
             padding-bottom: 12px; 
+            flex-wrap: wrap;
         }
         .header-title h1 { 
             font-size: 1.25rem; 
@@ -57,6 +58,8 @@
             flex-grow: 1; 
             font-weight: 800; 
             letter-spacing: -0.3px; 
+            width: 100%;
+            margin-bottom: 8px;
         }
         .status-badge { 
             font-size: 0.72rem; 
@@ -66,6 +69,7 @@
             font-weight: 600; 
             color: var(--text-muted); 
             border: 1px solid var(--border-color); 
+            margin-left: auto;
         }
 
         /* SEARCH & NAVIGATION */
@@ -126,6 +130,7 @@
         .btn:active { transform: scale(0.97); }
         .btn-outline { background: var(--surface-card); border: 1px solid var(--border-color); color: var(--text-main); }
         .btn-refresh { background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-color); color: #93c5fd; }
+        .btn-reset { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red); color: var(--accent-red); }
         .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; }
 
         /* REITER / AKKORDEON STYLES */
@@ -146,7 +151,6 @@
         .set-item-top { display: flex; justify-content: space-between; align-items: center; }
         .set-item-left { display: flex; align-items: center; gap: 12px; overflow: hidden; }
         
-        /* FESTER KÜRZEL-BADGE ANSTELLE VON BILDERN */
         .set-badge-icon { 
             width: 44px; 
             height: 36px; 
@@ -180,19 +184,23 @@
         .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #10b981 0%, #34d399 100%); width: 0%; transition: width 0.4s ease; }
 
         .tracker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 12px; max-height: 65vh; overflow-y: auto; padding: 12px; background: rgba(0,0,0,0.25); border-radius: 14px; border: 1px solid var(--border-color); margin-top: 14px; }
-        .tracker-card { position: relative; background: var(--surface-card); border-radius: 12px; border: 1px solid var(--border-color); padding: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s ease-in-out; user-select: none; touch-action: manipulation; }
+        .tracker-card { position: relative; background: var(--surface-card); border-radius: 12px; border: 1px solid var(--border-color); padding: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s ease-in-out; user-select: none; }
+        .tracker-card:active { transform: scale(0.97); } /* Leichtes Feedback beim Antippen */
         .tracker-card-img { width: 100%; height: 125px; object-fit: contain; filter: grayscale(100%) opacity(0.35); transition: filter 0.25s ease, opacity 0.25s ease; pointer-events: none; }
         .tracker-card-info { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-align: center; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; pointer-events: none; }
         .tracker-card.owned { border-color: var(--accent-green); background: rgba(16, 185, 129, 0.08); }
         .tracker-card.owned .tracker-card-img { filter: grayscale(0%) opacity(1); }
         .tracker-card.owned .tracker-card-info { color: #a7f3d0; }
-        .count-badge { position: absolute; top: 6px; right: 6px; background: var(--accent-green); color: white; border-radius: 12px; padding: 2px 7px; font-size: 0.68rem; font-weight: 800; display: none; pointer-events: none; }
+        .count-badge { position: absolute; top: 6px; right: 6px; background: var(--accent-green); color: white; border-radius: 12px; padding: 2px 7px; font-size: 0.68rem; font-weight: 800; display: none; pointer-events: none; z-index: 2; }
         .tracker-card.owned .count-badge { display: block; }
         .variant-pills { display: flex; gap: 3px; margin-top: 4px; flex-wrap: wrap; justify-content: center; pointer-events: none; }
         .pill { font-size: 0.55rem; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border-color); }
         .pill.rev { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
         .pill.holo { background: rgba(245, 158, 11, 0.2); color: #fde047; }
-        .card-menu-btn { position: absolute; top: 6px; left: 6px; background: rgba(15, 23, 42, 0.8); color: var(--text-muted); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; z-index: 10; border: 1px solid var(--border-color); }
+        
+        /* Das Zahnrad brauchen wir nicht mehr zwingend, da die ganze Karte das Modal öffnet, 
+           aber wir lassen es als visuelles Feedback für "Bearbeiten" stehen */
+        .card-menu-btn { position: absolute; top: 6px; left: 6px; background: rgba(15, 23, 42, 0.8); color: var(--text-muted); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; z-index: 1; border: 1px solid var(--border-color); pointer-events: none; }
 
         /* MODAL STYLES */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 12px; }
@@ -259,8 +267,11 @@
     <div class="main-container">
         <div class="header-title">
             <h1 id="tracker-main-title">Serien & Erweiterungen</h1>
-            <button class="btn btn-outline" id="btn-back-to-series" style="display:none; padding:6px 12px; font-size:0.75rem;">◄ Übersicht</button>
-            <button class="btn btn-refresh" id="btn-refresh-database" style="padding:6px 12px; font-size:0.75rem;">🔄 Updates</button>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn btn-outline" id="btn-back-to-series" style="display:none; padding:6px 12px; font-size:0.75rem;">◄ Übersicht</button>
+                <button class="btn btn-refresh" id="btn-refresh-database" style="padding:6px 12px; font-size:0.75rem;">🔄 Updates</button>
+                <button class="btn btn-reset" id="btn-reset-collection" style="padding:6px 12px; font-size:0.75rem;">🗑️ Reset</button>
+            </div>
             <span class="status-badge" id="tracker-status">Lade...</span>
         </div>
 
@@ -357,13 +368,7 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
-        /* 
-           DIE LÖSUNG DES PROBLEMS: 
-           Hier sind exakte "Jahre" und "releaseDates" wieder drin! 
-           Dadurch ist die Sortierung (jüngstes Set oben) und die Jahreszuordnung 100% repariert.
-        */
         const KNOWN_SETS_DB = {
-            /* SCARLET & VIOLET (mit exaktem Datum!) */
             'sv8':   { code: 'SSP', year: 2024, releaseDate: '2024-11-08', total: 191 },
             'sv7':   { code: 'SCR', year: 2024, releaseDate: '2024-09-13', total: 142 },
             'sv6.5': { code: 'SFA', year: 2024, releaseDate: '2024-08-02', total: 64 },
@@ -375,8 +380,6 @@
             'sv3':   { code: 'OBF', year: 2023, releaseDate: '2023-08-11', total: 197 },
             'sv2':   { code: 'PAL', year: 2023, releaseDate: '2023-06-09', total: 193 },
             'sv1':   { code: 'SVI', year: 2023, releaseDate: '2023-03-31', total: 198 },
-
-            /* SWORD & SHIELD */
             'swsh12.5':{ code: 'CRZ', year: 2023, releaseDate: '2023-01-20', total: 159 },
             'swsh12': { code: 'SIT', year: 2022, releaseDate: '2022-11-11', total: 195 },
             'swsh11': { code: 'LOR', year: 2022, releaseDate: '2022-09-09', total: 196 },
@@ -392,8 +395,6 @@
             'swsh3':  { code: 'DAA', year: 2020, releaseDate: '2020-08-14', total: 189 },
             'swsh2':  { code: 'RCL', year: 2020, releaseDate: '2020-05-01', total: 192 },
             'swsh1':  { code: 'SSH', year: 2020, releaseDate: '2020-02-07', total: 202 },
-
-            /* SUN & MOON */
             'sm12':  { code: 'CEC', year: 2019, releaseDate: '2019-11-01', total: 236 },
             'sm11.5':{ code: 'HIF', year: 2019, releaseDate: '2019-08-23', total: 68 },
             'sm11':  { code: 'UNM', year: 2019, releaseDate: '2019-08-02', total: 236 },
@@ -409,8 +410,6 @@
             'sm3':   { code: 'BUS', year: 2017, releaseDate: '2017-08-04', total: 147 },
             'sm2':   { code: 'GRI', year: 2017, releaseDate: '2017-05-05', total: 145 },
             'sm1':   { code: 'SUM', year: 2017, releaseDate: '2017-02-03', total: 149 },
-
-            /* XY SERIES */
             'xy12':  { code: 'EVO', year: 2016, releaseDate: '2016-11-02', total: 108 },
             'xy11':  { code: 'STS', year: 2016, releaseDate: '2016-08-03', total: 114 },
             'xy10':  { code: 'FCO', year: 2016, releaseDate: '2016-05-02', total: 124 },
@@ -423,8 +422,6 @@
             'xy3':   { code: 'FFI', year: 2014, releaseDate: '2014-08-13', total: 111 },
             'xy2':   { code: 'FLF', year: 2014, releaseDate: '2014-05-07', total: 106 },
             'xy1':   { code: 'XY',  year: 2014, releaseDate: '2014-02-05', total: 146 },
-
-            /* BW SERIES */
             'bw11':  { code: 'LTR', year: 2013, releaseDate: '2013-11-06', total: 113 },
             'bw10':  { code: 'PLB', year: 2013, releaseDate: '2013-08-14', total: 105 },
             'bw9':   { code: 'PLF', year: 2013, releaseDate: '2013-05-08', total: 116 },
@@ -436,8 +433,6 @@
             'bw3':   { code: 'NVI', year: 2011, releaseDate: '2011-11-16', total: 101 },
             'bw2':   { code: 'EPO', year: 2011, releaseDate: '2011-08-31', total: 98 },
             'bw1':   { code: 'BLW', year: 2011, releaseDate: '2011-04-25', total: 114 },
-
-            /* CLASSICS & OTHERS */
             'hgss4': { code: 'TM', year: 2010, releaseDate: '2010-11-03', total: 102 },
             'hgss3': { code: 'UD', year: 2010, releaseDate: '2010-08-18', total: 90 },
             'hgss2': { code: 'UL', year: 2010, releaseDate: '2010-05-12', total: 96 },
@@ -476,6 +471,22 @@
             try { localStorage.setItem(`collection_${setId}`, JSON.stringify(data)); } catch(e) {}
         }
 
+        function resetAllCollections() {
+            const sicher = confirm("ACHTUNG: Möchtest du wirklich deine komplette Sammlung unwiderruflich löschen? Alle gespeicherten Karten werden auf 0 gesetzt.");
+            if (sicher) {
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('collection_')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+                alert("Deine Sammlung wurde erfolgreich geleert. Du kannst nun bei 0 starten.");
+                location.reload();
+            }
+        }
+
         function checkIsUltraRareCard(cardName) {
             const nameLower = (cardName || '').toLowerCase();
             return nameLower.includes('-ex') || nameLower.includes(' ex') || 
@@ -493,14 +504,12 @@
             let year = null;
             let releaseDate = null; 
 
-            // 1. Zuerst schauen wir in unsere fehlerfreie Datenbank
             if (KNOWN_SETS_DB[idClean]) {
                 if (KNOWN_SETS_DB[idClean].code) code = KNOWN_SETS_DB[idClean].code;
                 if (KNOWN_SETS_DB[idClean].year) year = KNOWN_SETS_DB[idClean].year;
                 if (KNOWN_SETS_DB[idClean].releaseDate) releaseDate = KNOWN_SETS_DB[idClean].releaseDate;
             }
 
-            // 2. Namens-Zuweisung für die neuen 2026er Sets (weil deren IDs in der API ständig schwanken)
             if (nameLower.includes('mega evolution energy')) { code = 'MEE'; year = 2026; releaseDate = '2026-01-01'; }
             else if (nameLower.includes('mega evolution')) { code = 'MEG'; year = 2025; releaseDate = '2025-11-01'; }
             else if (nameLower.includes('phantasmal flames')) { code = 'PFL'; year = 2026; releaseDate = '2026-02-15'; }
@@ -510,7 +519,6 @@
             else if (nameLower.includes('pitch black')) { code = 'PBL'; year = 2026; releaseDate = '2026-08-01'; }
             else if (nameLower.includes('30th')) { code = '30C'; year = 2026; releaseDate = '2026-10-01'; }
 
-            // 3. Absoluter Notfall-Fallback, falls ein Set nicht in der Datenbank ist
             if (!year) {
                 if (idClean.startsWith('sv')) { year = 2023; releaseDate = '2023-01-01'; }
                 else if (idClean.startsWith('swsh')) { year = 2020; releaseDate = '2020-01-01'; }
@@ -599,13 +607,11 @@
                 }
             });
 
-            // Jahre absteigend sortieren
             const sortedYears = Object.keys(groupedByYear).sort((a, b) => parseInt(b) - parseInt(a));
             let isFirstAccordion = true;
 
             const renderAccordionCard = (groupTitle, itemsList, isSpecial = false) => {
                 
-                // HIER IST DIE SORTIERUNG INNERHALB DES JAHRES: Jüngstes oben, Ältestes unten
                 itemsList.sort((a, b) => {
                     const dateA = a.info.releaseDate || '';
                     const dateB = b.info.releaseDate || '';
@@ -746,32 +752,6 @@
             }
         }
 
-        function handleCardClick(setId, cardObj, index) {
-            const cardId = typeof cardObj === 'string' ? cardObj : cardObj.id;
-            const cardName = cardObj.name || cardId;
-            const collection = getSetCollection(setId);
-            const cardData = collection[cardId] || { normal: 0, reverse: 0, holo: 0 };
-
-            cardData.name = cardName;
-            cardData.localId = cardObj.localId || cardId;
-            cardData.image = cardObj.image ? `${cardObj.image}/high.webp` : `https://assets.tcgdex.net/de/${setId}/${cardData.localId}/high.webp`;
-
-            const total = (cardData.normal || 0) + (cardData.reverse || 0) + (cardData.holo || 0);
-
-            if (total === 0) {
-                if (checkIsUltraRareCard(cardName)) {
-                    cardData.holo = 1; cardData.normal = 0; cardData.reverse = 0;
-                } else {
-                    cardData.normal = 1;
-                }
-                collection[cardId] = cardData;
-                saveSetCollection(setId, collection);
-                renderTrackerGrid();
-            } else {
-                openModalByIndex(index);
-            }
-        }
-
         function renderTrackerGrid() {
             if (!currentCards.length) {
                 trackerGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:30px;">Keine Karten gefunden.</div>';
@@ -796,36 +776,10 @@
                 
                 let imgUrlLow = c.image ? `${c.image}/low.webp` : `https://assets.tcgdex.net/de/${currentSetId}/${c.localId}/low.webp`;
 
-                let pressTimer = null;
-                let isLongPress = false;
-
-                const startPress = () => {
-                    isLongPress = false;
-                    pressTimer = setTimeout(() => {
-                        isLongPress = true;
-                        openModalByIndex(index);
-                    }, 500);
-                };
-
-                const cancelPress = () => {
-                    if (pressTimer) clearTimeout(pressTimer);
-                };
-
-                cardEl.addEventListener('touchstart', startPress, { passive: true });
-                cardEl.addEventListener('touchend', (e) => {
-                    cancelPress();
-                    if (!isLongPress) {
-                        handleCardClick(currentSetId, c, index);
-                    }
+                // HIER IST DIE SCROLL-SICHERE KLICK-LOGIK
+                cardEl.addEventListener('click', (e) => {
+                    openModalByIndex(index);
                 });
-                cardEl.addEventListener('mousedown', startPress);
-                cardEl.addEventListener('mouseup', () => {
-                    cancelPress();
-                    if (!isLongPress) {
-                        handleCardClick(currentSetId, c, index);
-                    }
-                });
-                cardEl.addEventListener('mouseleave', cancelPress);
 
                 let pillsHtml = '';
                 if (norm > 0) pillsHtml += `<span class="pill">${norm}x N</span>`;
@@ -840,10 +794,6 @@
                     <div class="variant-pills">${pillsHtml}</div>
                 `;
 
-                cardEl.querySelector('.card-menu-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openModalByIndex(index);
-                });
                 trackerGrid.appendChild(cardEl);
             });
 
@@ -859,7 +809,12 @@
 
             const card = currentCards[index];
             const collection = getSetCollection(currentSetId);
-            const cardData = collection[card.id] || { normal: 0, reverse: 0, holo: 0 };
+            
+            // Wenn die Karte neu hinzugefügt wird, speichern wir ihre Basisdaten
+            if (!collection[card.id]) {
+                collection[card.id] = { normal: 0, reverse: 0, holo: 0, name: card.name, localId: card.localId, image: card.image ? `${card.image}/high.webp` : `https://assets.tcgdex.net/de/${currentSetId}/${card.localId}/high.webp` };
+            }
+            const cardData = collection[card.id];
 
             initialCardState = { normal: cardData.normal || 0, reverse: cardData.reverse || 0, holo: cardData.holo || 0 };
             tempCardState = { ...initialCardState };
@@ -907,7 +862,13 @@
             cardData.reverse = tempCardState.reverse;
             cardData.holo = tempCardState.holo;
 
-            collection[card.id] = cardData;
+            // Wenn keine Karte mehr vorhanden ist, können wir den Eintrag eigentlich löschen, um Speicher zu sparen
+            if (cardData.normal === 0 && cardData.reverse === 0 && cardData.holo === 0) {
+                delete collection[card.id];
+            } else {
+                collection[card.id] = cardData;
+            }
+            
             saveSetCollection(currentSetId, collection);
             renderTrackerGrid();
         }
@@ -974,6 +935,10 @@
 
         document.getElementById('series-search-input').addEventListener('input', (e) => renderYearAccordion(e.target.value));
         document.getElementById('btn-refresh-database').addEventListener('click', () => init(true));
+        
+        // DER NEUE RESET-BUTTON LISTENER
+        document.getElementById('btn-reset-collection').addEventListener('click', resetAllCollections);
+        
         document.getElementById('btn-back-to-series').addEventListener('click', showSeriesList);
 
         document.getElementById('btn-normal-minus').addEventListener('click', () => adjustVariant('normal', -1));

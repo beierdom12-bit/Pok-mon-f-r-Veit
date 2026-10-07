@@ -319,7 +319,6 @@
         let currentSetLogo = '';
         let activeEditCardId = null;
 
-        // BINDER COLLECTION STATE
         let binderCardsList = [];
         let currentBinderPage = 0;
 
@@ -383,8 +382,9 @@
             try { localStorage.setItem(`collection_${setId}`, JSON.stringify(data)); } catch(e) {}
         }
 
-        function buildCardImageUrl(setId, localNum) {
-            return `https://assets.tcgdex.net/de/${setId}/${localNum}/low.webp`;
+        // KORRIGIERTE VORDERSEITEN-BILD-URL LOGIK
+        function buildFrontCardImageUrl(setId, localNum) {
+            return `https://assets.tcgdex.net/de/${setId}/${localNum}/high.webp`;
         }
 
         function handleCardImgError(imgElement, setId, localNum) {
@@ -581,7 +581,7 @@
         }
 
         /* ------------------------------------------------------------- */
-        /* MEINE KARTEN (GLOBALE BINDER ANSICHT 3x3 WITH IMAGES)          */
+        /* MEINE KARTEN (GLOBALE BINDER ANSICHT 3x3)                     */
         /* ------------------------------------------------------------- */
         function openMyCardsBinder() {
             document.getElementById('main-overview-section').style.display = 'none';
@@ -620,7 +620,7 @@
                             numVal: numVal,
                             count: total,
                             releaseDate: info.releaseDate || '2024-01-01',
-                            image: buildCardImageUrl(s.id, localNum)
+                            image: buildFrontCardImageUrl(s.id, localNum)
                         });
                     }
                 }
@@ -766,7 +766,7 @@
 
                 const cardEl = document.createElement('div');
                 cardEl.className = `tracker-card ${isOwned ? 'owned' : ''}`;
-                let imgUrl = buildCardImageUrl(currentSetId, c.localId);
+                let imgUrl = buildFrontCardImageUrl(currentSetId, c.localId);
 
                 cardEl.addEventListener('click', () => handleCardClick(currentSetId, c.id, c.name));
 

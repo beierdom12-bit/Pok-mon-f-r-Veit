@@ -369,13 +369,13 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
-        /* EXPLIZITE SETS OHNE GRAFIK-SYMBOL (151, PROMOS, ZUKÜNFTIGE SETS) */
+        /* EXPLIZITE SETS OHNE GRAFIK-SYMBOL */
         const TEXT_ONLY_SETS = [
             'sv03.5', 'mew', '151', 'swsh07.5', 'cel25', 'promos', 'smp', 'dpp', 'bwp', 'xyp', 
             'misc', 'wp', 'jumb', 'tk', 'me01', 'me02', 'me03', 'me04', 'me05', '30th', 'pfl', 'mee'
         ];
 
-        /* STRIKTE MANDANTEN-LOOKUP-TABLE: ÜBERSCHREIBT API-DATEN FÜR EXAKTE KÜRZEL & NAMEN */
+        /* PREZISE LOOKUP-TABLE: KORRIGIERT UND ENTWIRRT DIE NAMEN & KÜRZEL DER TCGDEX-API */
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
             'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', nameEn: 'Pitch Black', nameDe: 'Dunkelnacht', total: 180 },
@@ -501,11 +501,10 @@
         function getSetYearAndCode(set) {
             const idClean = set.id.toLowerCase();
             
-            // WICHTIG: Erzwinge bekannte Werte, falls API abweichende Namen/IDs liefert
+            // EXAKTER OVERRIDE DURCH DIESE SCHLEIFE
             if (KNOWN_SETS_DB[idClean]) {
                 const dbInfo = KNOWN_SETS_DB[idClean];
-                // Name im Set-Objekt überschreiben
-                set.name = dbInfo.nameEn;
+                set.name = dbInfo.nameEn; // Name überschreiben
                 return dbInfo;
             }
 
@@ -557,7 +556,16 @@
                 'promos': { title: '🎁 Special & Promos', sets: [] }
             };
 
+            // DEDUZIERUNG ZWECKS VERMEIDUNG VON DUPLIKATEN
+            const processedSetIds = new Set();
+
             allSetsData.forEach(set => {
+                const idLower = set.id.toLowerCase();
+                
+                // Vermeidet doppeltes Rendern
+                if (processedSetIds.has(idLower)) return;
+                processedSetIds.add(idLower);
+
                 const info = getSetYearAndCode(set);
                 const year = info.year;
                 const specialKey = getSpecialCategoryKey(set.id, set.name);

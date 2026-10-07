@@ -145,29 +145,30 @@
         .set-item-top { display: flex; justify-content: space-between; align-items: center; }
         .set-item-left { display: flex; align-items: center; gap: 12px; overflow: hidden; }
         
-        /* HOCHKONTRAST KARTEN-SYMBOL BADGES (HELLER HINTERGRUND FÜR SCHWARZE SYMBOLE) */
+        /* SYMBOL BADGES (WIE IN DER REFERENZ-APP: DUNKLES FELD MIT WEISSEM SYMBOL) */
         .set-badge-icon { 
             width: 38px; 
             height: 38px; 
             border-radius: 10px; 
-            background: #ffffff; 
-            border: 1px solid rgba(255, 255, 255, 0.2); 
+            background: rgba(255, 255, 255, 0.08); 
+            border: 1px solid var(--border-color); 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             font-size: 0.68rem; 
             font-weight: 900; 
-            color: #0f172a; 
+            color: #93c5fd; 
             flex-shrink: 0; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             overflow: hidden;
-            padding: 4px;
+            padding: 5px;
         }
 
         .set-badge-symbol-img { 
             width: 100%; 
             height: 100%; 
             object-fit: contain; 
+            filter: brightness(0) invert(1); /* MCHT SCHWARZE SYMBOLE LEUCHTEND WEISS */
         }
 
         .set-item-name { font-size: 0.88rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -359,20 +360,26 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
-        /* VOLLSTÄNDIGE SCHWERT & SCHILD + KARMESIN & PURPUR MAPPING TAFEL DAFÜR DASS DIE ECHTEN POKEMON-SYMBOLE GELADEN WERDEN */
-        const TCGDEX_SYMBOL_FALLBACKS = {
-            'swsh12': 'https://assets.tcgdex.net/de/swsh/swsh12/symbol.png',
-            'swsh11': 'https://assets.tcgdex.net/de/swsh/swsh11/symbol.png',
-            'swsh10': 'https://assets.tcgdex.net/de/swsh/swsh10/symbol.png',
-            'swsh09': 'https://assets.tcgdex.net/de/swsh/swsh09/symbol.png',
-            'swsh08': 'https://assets.tcgdex.net/de/swsh/swsh08/symbol.png',
-            'swsh07': 'https://assets.tcgdex.net/de/swsh/swsh07/symbol.png',
-            'swsh06': 'https://assets.tcgdex.net/de/swsh/swsh06/symbol.png',
-            'swsh05': 'https://assets.tcgdex.net/de/swsh/swsh05/symbol.png',
-            'swsh04': 'https://assets.tcgdex.net/de/swsh/swsh04/symbol.png',
-            'swsh03': 'https://assets.tcgdex.net/de/swsh/swsh03/symbol.png',
-            'swsh02': 'https://assets.tcgdex.net/de/swsh/swsh02/symbol.png',
-            'swsh01': 'https://assets.tcgdex.net/de/swsh/swsh01/symbol.png'
+        /* VOLLSTÄNDIGE MATRIX ZUR DIREKTEN VERKNÜPFUNG VON TCGDEX SETS MIT POKEMONTCG.IO SYMBOL-URLS */
+        const POKEMON_SYMBOL_LOOKUP = {
+            // SCHWERT & SCHILD
+            'swsh12': 'swsh12', 'swsh12.5': 'swsh12pt5', 'swsh11': 'swsh11', 'swsh10.5': 'pgo',
+            'swsh10': 'swsh10', 'swsh09': 'swsh9', 'swsh08': 'swsh8', 'swsh07.5': 'cel25',
+            'swsh07': 'swsh7', 'swsh06': 'swsh6', 'swsh05': 'swsh5', 'swsh04.5': 'swsh4pt5',
+            'swsh04': 'swsh4', 'swsh03.5': 'swsh3pt5', 'swsh03': 'swsh3', 'swsh02': 'swsh2', 'swsh01': 'swsh1',
+            
+            // KARMESIN & PURPUR
+            'sv08.5': 'sv8pt5', 'sv08': 'sv8', 'sv07': 'sv7', 'sv06.5': 'sv6pt5',
+            'sv06': 'sv6', 'sv05': 'sv5', 'sv04.5': 'sv4pt5', 'sv04': 'sv4',
+            'sv03.5': 'sv3pt5', 'sv03': 'sv3', 'sv02': 'sv2', 'sv01': 'sv1',
+
+            // SONNE & MOND
+            'sm12': 'sm12', 'sm11.5': 'sm11pt5', 'sm11': 'sm11', 'sm10': 'sm10', 'sm09': 'sm9',
+            'sm08': 'sm8', 'sm07.5': 'sm7pt5', 'sm07': 'sm7', 'sm06': 'sm6', 'sm05': 'sm5',
+            'sm04': 'sm4', 'sm03.5': 'sm3pt5', 'sm03': 'sm3', 'sm02': 'sm2', 'sm01': 'sm1',
+
+            // KLASSISCH
+            'base1': 'base1', 'ju': 'base2', 'fo': 'base3', 'tr': 'base4'
         };
 
         const KNOWN_SETS_DB = {
@@ -428,12 +435,29 @@
             try { localStorage.setItem(`collection_${setId}`, JSON.stringify(data)); } catch(e) {}
         }
 
-        function getSetSymbolUrl(set) {
-            if (set.symbol) {
-                return set.symbol.startsWith('http') ? `${set.symbol}.png` : set.symbol;
+        function getSetSymbolUrl(setId, setObj) {
+            const rawId = setId.toLowerCase();
+            
+            // Standardisiere IDs wie swsh1 -> swsh01 oder swsh10 -> swsh10
+            let normalizedId = rawId;
+            const match = rawId.match(/^(swsh|sv|sm)(\d+)(\..*)?$/);
+            if (match) {
+                const prefix = match[1];
+                const num = parseInt(match[2], 10);
+                const suffix = match[3] || '';
+                const numPadded = num < 10 ? '0' + num : '' + num;
+                normalizedId = `${prefix}${numPadded}${suffix}`;
             }
-            const cleanId = set.id.toLowerCase();
-            if (TCGDEX_SYMBOL_FALLBACKS[cleanId]) return TCGDEX_SYMBOL_FALLBACKS[cleanId];
+
+            const mappedId = POKEMON_SYMBOL_LOOKUP[normalizedId] || POKEMON_SYMBOL_LOOKUP[rawId];
+            if (mappedId) {
+                return `https://images.pokemontcg.io/${mappedId}/symbol.png`;
+            }
+            
+            if (setObj && setObj.symbol) {
+                return setObj.symbol.startsWith('http') ? `${setObj.symbol}.png` : setObj.symbol;
+            }
+
             return '';
         }
 
@@ -562,7 +586,7 @@
                     else if (pct >= 20 && pct < 50) barColor = 'var(--warning-color)';
                     else if (pct >= 50) barColor = 'var(--accent-green)';
 
-                    const symbolUrl = getSetSymbolUrl(s);
+                    const symbolUrl = getSetSymbolUrl(s.id, s);
 
                     const setRow = document.createElement('div');
                     setRow.className = 'set-item-row';

@@ -191,8 +191,9 @@
         
         .my-binder-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 16px; border: 1px solid var(--border-color); max-width: 500px; margin: 0 auto; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
         .my-binder-slot { aspect-ratio: 63/88; background: var(--surface-card); border: 1px solid var(--border-color); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; cursor: pointer; }
-        .my-binder-img { width: 100%; height: 100%; object-fit: cover; }
-        .my-binder-badge { position: absolute; top: 4px; right: 4px; background: rgba(16, 185, 129, 0.9); color: white; border-radius: 6px; font-size: 0.6rem; font-weight: 800; padding: 2px 5px; }
+        .my-binder-img { width: 100%; height: 100%; object-fit: contain; background: #0b0f19; }
+        .my-binder-badge { position: absolute; top: 4px; right: 4px; background: rgba(16, 185, 129, 0.9); color: white; border-radius: 6px; font-size: 0.6rem; font-weight: 800; padding: 2px 5px; z-index: 5; }
+        .my-binder-info-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.85); font-size: 0.6rem; font-weight: 700; color: var(--text-main); text-align: center; padding: 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .binder-pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
 
@@ -382,12 +383,13 @@
             try { localStorage.setItem(`collection_${setId}`, JSON.stringify(data)); } catch(e) {}
         }
 
-        function getCardImageUrl(c, setId = currentSetId, quality = 'low') {
-            if (!c || !c.image) return `https://assets.tcgdex.net/de/${setId}/${c.localId || c.id}/${quality}.webp`;
-            let rawImg = c.image;
-            if (rawImg.endsWith('.webp') || rawImg.endsWith('.png') || rawImg.endsWith('.jpg')) return rawImg;
-            if (rawImg.startsWith('http')) return `${rawImg}/${quality}.webp`;
-            return `https://assets.tcgdex.net/de/${setId}/${c.localId}/${quality}.webp`;
+        function buildCardImageUrl(setId, localNum) {
+            return `https://assets.tcgdex.net/de/${setId}/${localNum}/low.webp`;
+        }
+
+        function handleCardImgError(imgElement, setId, localNum) {
+            const ioSetId = POKEMONTCG_IO_SET_MAP[setId.toLowerCase()] || setId.toLowerCase();
+            imgElement.src = `https://images.pokemontcg.io/${ioSetId}/${localNum}.png`;
         }
 
         function getSetSymbolUrl(set, infoCode) {
@@ -579,7 +581,7 @@
         }
 
         /* ------------------------------------------------------------- */
-        /* MEINE KARTEN (GLOBALE BINDER ANSICHT 3x3)                     */
+        /* MEINE KARTEN (GLOBALE BINDER ANSICHT 3x3 WITH IMAGES)          */
         /* ------------------------------------------------------------- */
         function openMyCardsBinder() {
             document.getElementById('main-overview-section').style.display = 'none';
@@ -605,16 +607,20 @@
                     const cData = collection[cardId];
                     const total = (cData.normal || 0) + (cData.reverse || 0) + (cData.holo || 0);
                     if (total > 0) {
-                        const localNum = parseInt(cardId.split('-')[1]) || 999;
+                        const localParts = cardId.split('-');
+                        const localNum = localParts[1] || cardId;
+                        const numVal = parseInt(localNum) || 999;
+
                         binderCardsList.push({
                             id: cardId,
                             setId: s.id,
                             setName: s.name,
-                            name: cData.name || cardId,
-                            localId: localNum,
+                            name: cData.name || `#${localNum}`,
+                            localNum: localNum,
+                            numVal: numVal,
                             count: total,
                             releaseDate: info.releaseDate || '2024-01-01',
-                            image: getCardImageUrl({ localId: localNum, image: cData.image }, s.id)
+                            image: buildCardImageUrl(s.id, localNum)
                         });
                     }
                 }
@@ -624,8 +630,8 @@
             binderCardsList.sort((a, b) => {
                 if (sortBy === 'date-desc') return b.releaseDate.localeCompare(a.releaseDate);
                 if (sortBy === 'date-asc') return a.releaseDate.localeCompare(b.releaseDate);
-                if (sortBy === 'number-asc') return a.localId - b.localId;
-                if (sortBy === 'number-desc') return b.localId - a.localId;
+                if (sortBy === 'number-asc') return a.numVal - b.numVal;
+                if (sortBy === 'number-desc') return b.numVal - a.numVal;
                 if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
                 if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
                 return 0;
@@ -657,12 +663,13 @@
                     const card = pageItems[i];
                     slot.innerHTML = `
                         <div class="my-binder-badge">${card.count}x</div>
-                        <img class="my-binder-img" src="${card.image}" alt="${card.name}">
+                        <img class="my-binder-img" src="${card.image}" alt="${card.name}" loading="lazy" onerror="handleCardImgError(this, '${card.setId}', '${card.localNum}')">
+                        <div class="my-binder-info-overlay">#${card.localNum} ${card.name}</div>
                     `;
                     slot.onclick = () => openModal(card.id, card.name, card.setId);
                 } else {
                     slot.style.borderStyle = 'dashed';
-                    slot.style.opacity = '0.3';
+                    slot.style.opacity = '0.2';
                 }
                 grid.appendChild(slot);
             }
@@ -759,7 +766,7 @@
 
                 const cardEl = document.createElement('div');
                 cardEl.className = `tracker-card ${isOwned ? 'owned' : ''}`;
-                let imgUrl = getCardImageUrl(c, currentSetId, 'low');
+                let imgUrl = buildCardImageUrl(currentSetId, c.localId);
 
                 cardEl.addEventListener('click', () => handleCardClick(currentSetId, c.id, c.name));
 
@@ -771,7 +778,7 @@
                 cardEl.innerHTML = `
                     <div class="card-menu-btn">⚙</div>
                     <div class="count-badge">${total}x</div>
-                    <img class="tracker-card-img" src="${imgUrl}" alt="${c.name}" loading="lazy">
+                    <img class="tracker-card-img" src="${imgUrl}" alt="${c.name}" loading="lazy" onerror="handleCardImgError(this, '${currentSetId}', '${c.localId}')">
                     <div class="tracker-card-info">#${c.localId} ${c.name}</div>
                     <div class="variant-pills">${pillsHtml}</div>
                 `;

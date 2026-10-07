@@ -367,6 +367,41 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
+        /* PRÄZISE LOOKUP-TABELLE FÜR KÜRZEL & LOGOS */
+        const KNOWN_SETS_DB = {
+            '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameDe: '30 Jahre Collection', total: 100 },
+            'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', nameDe: 'Dunkelnacht', total: 180 },
+            'me04': { year: 2026, releaseDate: '2026-05-01', code: 'CRI', nameDe: 'Wachsendes Chaos', total: 190 },
+            'me03': { year: 2026, releaseDate: '2026-03-01', code: 'POR', nameDe: 'Optimale Ordnung', total: 175 },
+            'pfl':  { year: 2026, releaseDate: '2026-02-15', code: 'PFL', nameDe: 'Fatale Flammen', total: 94 },
+            'me02': { year: 2026, releaseDate: '2026-01-15', code: 'ASC', nameDe: 'Erhabene Helden', total: 217 },
+            'mee':  { year: 2026, releaseDate: '2026-01-01', code: 'MEE', nameDe: 'Mega Evolution Energy', total: 16 },
+            'me01': { year: 2025, releaseDate: '2025-11-01', code: 'MEG', nameDe: 'Mega-Entwicklung', total: 200 },
+            'sv10.5b': { year: 2025, releaseDate: '2025-08-15', code: 'BLK', nameDe: 'Black Bolt', total: 160 },
+            'sv10.5w': { year: 2025, releaseDate: '2025-08-15', code: 'WHT', nameDe: 'White Flare', total: 160 },
+            'sv10': { year: 2025, releaseDate: '2025-05-20', code: 'DRI', nameDe: 'Destined Rivals', total: 180 },
+            'sv09': { year: 2025, releaseDate: '2025-03-28', code: 'JTG', nameDe: 'Journey Together', total: 190 },
+            'sv08.5': { year: 2025, releaseDate: '2025-01-17', code: 'PRE', nameDe: 'Prismatische Entwicklungen', total: 175 },
+            'sv08': { year: 2024, releaseDate: '2024-11-08', code: 'SSP', nameDe: 'Stürmische Funken', total: 250 },
+            'sv07': { year: 2024, releaseDate: '2024-09-13', code: 'SCR', nameDe: 'Stellarkrone', total: 170 },
+            'sv06.5': { year: 2024, releaseDate: '2024-08-02', code: 'SFA', nameDe: 'Nebel der Sagen', total: 95 },
+            'sv06': { year: 2024, releaseDate: '2024-05-24', code: 'TWM', nameDe: 'Maskerade von Zwielicht', total: 220 },
+            'sv05': { year: 2024, releaseDate: '2024-03-22', code: 'TEF', nameDe: 'Gewalten der Zeit', total: 218 },
+            'sv04.5': { year: 2024, releaseDate: '2024-01-26', code: 'PAF', nameDe: 'Paldeas Schicksale', total: 240 },
+            'sv04': { year: 2023, releaseDate: '2023-11-03', code: 'PAR', nameDe: 'Paradoxrift', total: 260 },
+            'sv03.5': { year: 2023, releaseDate: '2023-09-22', code: 'MEW', nameDe: '151', total: 207 },
+            'sv03': { year: 2023, releaseDate: '2023-08-11', code: 'OBF', nameDe: 'Obsidianflammen', total: 230 },
+            'sv02': { year: 2023, releaseDate: '2023-06-09', code: 'PAL', nameDe: 'Entwicklungen in Paldea', total: 279 },
+            'sv01': { year: 2023, releaseDate: '2023-03-31', code: 'SVI', nameDe: 'Karmesin & Purpur', total: 258 },
+            'swsh12.5': { year: 2023, releaseDate: '2023-01-20', code: 'CRZ', nameDe: 'Zenit der Könige', total: 230 },
+            'swsh12': { year: 2022, releaseDate: '2022-11-11', code: 'SIT', nameDe: 'Silberne Sturmwolken', total: 245 },
+            'swsh11': { year: 2022, releaseDate: '2022-09-09', code: 'LOR', nameDe: 'Verlorener Ursprung', total: 247 },
+            'swsh10': { year: 2022, releaseDate: '2022-05-27', code: 'ASR', nameDe: 'Astralglanz', total: 246 },
+            'swsh09': { year: 2022, releaseDate: '2022-02-25', code: 'BRS', nameDe: 'Strahlende Sterne', total: 216 },
+            'swsh08': { year: 2021, releaseDate: '2021-11-12', code: 'FST', nameDe: 'Fusionsangriff', total: 284 },
+            'swsh07': { year: 2021, releaseDate: '2021-08-27', code: 'EVS', nameDe: 'Drachenwandel', total: 237 }
+        };
+
         const trackerStatus = document.getElementById('tracker-status');
         const trackerGrid = document.getElementById('tracker-grid');
         const trackerStats = document.getElementById('tracker-stats');
@@ -385,11 +420,21 @@
             try { localStorage.setItem(`collection_${setId}`, JSON.stringify(data)); } catch(e) {}
         }
 
+        /* LOGO- ODER KÜRZEL-LOGIK FÜR 2017-2021 SOWIE ANDERE JAHRE */
         function getPrimarySymbolUrl(setObj) {
+            const idClean = setObj.id.toLowerCase();
+            const year = getSetYearAndCode(setObj).year;
+
+            // Für die Jahre 2017 bis 2021 werden primär die Set-Logos als Symbol genutzt
+            if (year >= 2017 && year <= 2021) {
+                if (setObj.logo) return setObj.logo.endsWith('.png') ? setObj.logo : `${setObj.logo}.png`;
+                return `https://assets.tcgdex.net/de/${idClean}/logo.png`;
+            }
+
             if (setObj && setObj.symbol) {
                 return setObj.symbol.endsWith('.png') ? setObj.symbol : `${setObj.symbol}.png`;
             }
-            return `https://assets.tcgdex.net/en/${setObj.id}/symbol.png`;
+            return `https://assets.tcgdex.net/de/${idClean}/symbol.png`;
         }
 
         function checkIsUltraRareCard(cardName) {
@@ -402,6 +447,12 @@
         }
 
         function getSetYearAndCode(set) {
+            const idClean = set.id.toLowerCase();
+            if (KNOWN_SETS_DB[idClean]) {
+                const db = KNOWN_SETS_DB[idClean];
+                return { year: db.year, releaseDate: db.releaseDate, code: db.code };
+            }
+
             let year = null;
             if (set.releaseDate) {
                 const parts = set.releaseDate.split('-');
@@ -410,7 +461,6 @@
                 }
             }
 
-            const idClean = set.id.toLowerCase();
             if (!year) {
                 if (idClean.startsWith('me')) year = 2026;
                 else if (idClean.startsWith('sv')) year = 2023;
@@ -435,10 +485,24 @@
 
             try {
                 let fetchedSets = [];
-                const resSets = await fetch(`${API_BASE_EN}/sets`);
+                const resSets = await fetch(`${API_BASE_DE}/sets`);
                 if (resSets.ok) fetchedSets = await resSets.json();
 
+                if (!fetchedSets || fetchedSets.length === 0) {
+                    const resEn = await fetch(`${API_BASE_EN}/sets`);
+                    if (resEn.ok) fetchedSets = await resEn.json();
+                }
+
                 allSetsData = fetchedSets.filter(s => s.cardCount && s.cardCount.total > 0);
+                
+                // Deutsche Namen aus DB einpflegen falls vorhanden
+                allSetsData.forEach(s => {
+                    const idClean = s.id.toLowerCase();
+                    if (KNOWN_SETS_DB[idClean] && KNOWN_SETS_DB[idClean].nameDe) {
+                        s.name = KNOWN_SETS_DB[idClean].nameDe;
+                    }
+                });
+
                 renderYearAccordion();
                 trackerStatus.textContent = 'Bereit';
             } catch (err) {
@@ -535,7 +599,8 @@
                 itemsList.forEach(item => {
                     const s = item.set;
                     const info = item.info;
-                    const total = s.cardCount.official || s.cardCount.total || 0;
+                    const dbTotal = KNOWN_SETS_DB[s.id.toLowerCase()] ? KNOWN_SETS_DB[s.id.toLowerCase()].total : 0;
+                    const total = dbTotal || s.cardCount.official || s.cardCount.total || 0;
                     
                     const collection = getSetCollection(s.id);
                     let owned = 0;
@@ -607,7 +672,7 @@
             renderYearAccordion(document.getElementById('series-search-input').value);
         }
 
-        /* DYNAMISCHES LADEN ÜBER DIE OFFIZIELLE TCGDEX-API BEIDER SPRACHEN */
+        /* DEUTSCHE KARTEN DATENBANK LADEN */
         async function loadSet(setId) {
             if (!setId) return;
             currentSetId = setId;
@@ -619,17 +684,23 @@
 
             try {
                 let setData = null;
-                const resEn = await fetch(`${API_BASE_EN}/sets/${setId}`);
-                if (resEn.ok) setData = await resEn.json();
+                const resDe = await fetch(`${API_BASE_DE}/sets/${setId}`);
+                if (resDe.ok) setData = await resDe.json();
 
                 if (!setData || !setData.cards || setData.cards.length === 0) {
-                    const resDe = await fetch(`${API_BASE_DE}/sets/${setId}`);
-                    if (resDe.ok) setData = await resDe.json();
+                    const resEn = await fetch(`${API_BASE_EN}/sets/${setId}`);
+                    if (resEn.ok) setData = await resEn.json();
                 }
 
                 if (setData) {
-                    currentSetName = setData.name || 'Pokémon Set';
-                    currentSetLogo = setData.logo ? (setData.logo.endsWith('.png') ? setData.logo : `${setData.logo}.png`) : '';
+                    const idClean = setId.toLowerCase();
+                    if (KNOWN_SETS_DB[idClean] && KNOWN_SETS_DB[idClean].nameDe) {
+                        currentSetName = KNOWN_SETS_DB[idClean].nameDe;
+                    } else {
+                        currentSetName = setData.name || 'Pokémon Set';
+                    }
+
+                    currentSetLogo = setData.logo ? (setData.logo.endsWith('.png') ? setData.logo : `${setData.logo}.png`) : `https://assets.tcgdex.net/de/${setId}/logo.png`;
                     currentCards = setData.cards || [];
                 }
 
@@ -657,7 +728,7 @@
 
             cardData.name = cardName;
             cardData.localId = cardObj.localId || cardId;
-            cardData.image = cardObj.image ? `${cardObj.image}/high.webp` : `https://assets.tcgdex.net/en/${setId}/${cardData.localId}/high.webp`;
+            cardData.image = cardObj.image ? `${cardObj.image}/high.webp` : `https://assets.tcgdex.net/de/${setId}/${cardData.localId}/high.webp`;
 
             const total = (cardData.normal || 0) + (cardData.reverse || 0) + (cardData.holo || 0);
 
@@ -697,7 +768,7 @@
                 const cardEl = document.createElement('div');
                 cardEl.className = `tracker-card ${isOwned ? 'owned' : ''}`;
                 
-                let imgUrlLow = c.image ? `${c.image}/low.webp` : `https://assets.tcgdex.net/en/${currentSetId}/${c.localId}/low.webp`;
+                let imgUrlLow = c.image ? `${c.image}/low.webp` : `https://assets.tcgdex.net/de/${currentSetId}/${c.localId}/low.webp`;
 
                 let pressTimer = null;
                 let isLongPress = false;
@@ -768,7 +839,7 @@
             tempCardState = { ...initialCardState };
 
             const isUltraRare = checkIsUltraRareCard(card.name);
-            const cardImgHigh = card.image ? `${card.image}/high.webp` : `https://assets.tcgdex.net/en/${currentSetId}/${card.localId}/high.webp`;
+            const cardImgHigh = card.image ? `${card.image}/high.webp` : `https://assets.tcgdex.net/de/${currentSetId}/${card.localId}/high.webp`;
 
             document.getElementById('modal-card-img-large').src = cardImgHigh;
             document.getElementById('modal-card-title').textContent = `#${card.localId} ${card.name}`;

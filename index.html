@@ -145,21 +145,21 @@
         .set-item-top { display: flex; justify-content: space-between; align-items: center; }
         .set-item-left { display: flex; align-items: center; gap: 12px; overflow: hidden; }
         
-        /* SAUBERE KARTEN-SYMBOL-BADGES */
+        /* SYMBOL BADGES (KARTEN-SYMBOLE WIE IN DER REFERENZ-APP) */
         .set-badge-icon { 
             width: 38px; 
             height: 38px; 
             border-radius: 10px; 
-            background: #0f172a; 
+            background: #ffffff; 
             border: 1px solid var(--border-color); 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            font-size: 0.7rem; 
+            font-size: 0.68rem; 
             font-weight: 900; 
-            color: #93c5fd; 
+            color: #0f172a; 
             flex-shrink: 0; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
             overflow: hidden;
             padding: 4px;
         }
@@ -168,7 +168,6 @@
             width: 100%; 
             height: 100%; 
             object-fit: contain; 
-            filter: drop-shadow(0 0 2px rgba(255,255,255,0.4)); 
         }
 
         .set-item-name { font-size: 0.88rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -360,6 +359,29 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
+        /* VOLLSTÄNDIGE MAPPING-DATENBANK FÜR ALLE SET-SYMBOLE (POKEMON TCG OFFICIAL) */
+        const POKEMON_SYMBOL_MAP = {
+            // KARMESIN & PURPUR (SV)
+            'sv01': 'sv1', 'sv02': 'sv2', 'sv03': 'sv3', 'sv03.5': 'sv3pt5', 'sv04': 'sv4',
+            'sv04.5': 'sv4pt5', 'sv05': 'sv5', 'sv06': 'sv6', 'sv06.5': 'sv6pt5', 'sv07': 'sv7',
+            'sv08': 'sv8', 'sv08.5': 'sv8pt5', 'sv09': 'sv9', 'sv10': 'sv10',
+            
+            // SCHWERT & SCHILD (SWSH)
+            'swsh01': 'swsh1', 'swsh02': 'swsh2', 'swsh03': 'swsh3', 'swsh03.5': 'swsh3pt5',
+            'swsh04': 'swsh4', 'swsh04.5': 'swsh4pt5', 'swsh05': 'swsh5', 'swsh06': 'swsh6',
+            'swsh07': 'swsh7', 'swsh07.5': 'cel25', 'swsh08': 'swsh8', 'swsh09': 'swsh9',
+            'swsh10': 'swsh10', 'swsh10.5': 'pgo', 'swsh11': 'swsh11', 'swsh12': 'swsh12',
+            'swsh12.5': 'swsh12pt5',
+
+            // SONNE & MOND (SM)
+            'sm01': 'sm1', 'sm02': 'sm2', 'sm03': 'sm3', 'sm03.5': 'sm3pt5', 'sm04': 'sm4',
+            'sm05': 'sm5', 'sm06': 'sm6', 'sm07': 'sm7', 'sm07.5': 'sm7pt5', 'sm08': 'sm8',
+            'sm09': 'sm9', 'sm10': 'sm10', 'sm11': 'sm11', 'sm11.5': 'sm11pt5', 'sm12': 'sm12',
+
+            // KLASSISCHE SETS
+            'base1': 'base1', 'ju': 'base2', 'fo': 'base3', 'tr': 'base4', 'gym1': 'gym1', 'gym2': 'gym2'
+        };
+
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
             'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', nameEn: 'Pitch Black', nameDe: 'Dunkelnacht', total: 180 },
@@ -411,6 +433,12 @@
 
         function saveSetCollection(setId, data) {
             try { localStorage.setItem(`collection_${setId}`, JSON.stringify(data)); } catch(e) {}
+        }
+
+        function getSetSymbolUrl(setId, setObj) {
+            const cleanId = setId.toLowerCase();
+            const mappedId = POKEMON_SYMBOL_MAP[cleanId] || cleanId;
+            return `https://images.pokemontcg.io/${mappedId}/symbol.png`;
         }
 
         function checkIsUltraRareCard(cardName) {
@@ -538,21 +566,17 @@
                     else if (pct >= 20 && pct < 50) barColor = 'var(--warning-color)';
                     else if (pct >= 50) barColor = 'var(--accent-green)';
 
-                    // TCGDEX ECHTES SET SYMBOL
-                    const symbolUrl = s.symbol ? `${s.symbol}.png` : '';
+                    const symbolUrl = getSetSymbolUrl(s.id, s);
 
                     const setRow = document.createElement('div');
                     setRow.className = 'set-item-row';
                     
-                    let badgeContent = `<b>${info.code}</b>`;
-                    if (symbolUrl) {
-                        badgeContent = `<img class="set-badge-symbol-img" src="${symbolUrl}" alt="${info.code}" onerror="this.onerror=null; this.parentNode.innerHTML='<b>${info.code}</b>';">`;
-                    }
-
                     setRow.innerHTML = `
                         <div class="set-item-top">
                             <div class="set-item-left">
-                                <div class="set-badge-icon">${badgeContent}</div>
+                                <div class="set-badge-icon">
+                                    <img class="set-badge-symbol-img" src="${symbolUrl}" alt="${info.code}" onerror="this.onerror=null; this.parentNode.innerHTML='<b>${info.code}</b>';">
+                                </div>
                                 <div class="set-item-name">${s.name}</div>
                             </div>
                             <div class="set-item-stats">${owned}/${total} <span style="opacity:0.6; font-size:0.75rem;">| ${pct}%</span></div>
@@ -725,7 +749,6 @@
             progressFill.style.width = `${pct}%`;
         }
 
-        /* MODAL ÖFFNEN PER INDEX */
         function openModalByIndex(index) {
             if (index < 0 || index >= currentCards.length) return;
             activeEditCardIndex = index;
@@ -810,7 +833,6 @@
             activeEditCardIndex = -1;
         }
 
-        /* DYNAMISCHE NAVIGATION OHNE DAS MODAL ZU SCHLIESSEN */
         function navigateModal(direction) {
             if (activeEditCardIndex >= 0) {
                 saveCurrentStateSilently();

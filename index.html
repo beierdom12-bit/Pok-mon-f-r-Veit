@@ -195,7 +195,8 @@
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; }
         .modal-overlay.open { display: flex; }
         .modal-box { background: #131a29; border-radius: 18px; padding: 22px; width: 92%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); border: 1px solid var(--border-color); }
-        .modal-header { font-weight: 800; font-size: 1.05rem; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; color: var(--text-main); }
+        .modal-header { font-weight: 800; font-size: 1.05rem; margin-bottom: 4px; color: var(--text-main); }
+        .modal-subtitle { font-size: 0.75rem; color: var(--primary-color); font-weight: 700; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
         .variant-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); }
         .counter-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--surface-card); color: var(--text-main); cursor: pointer; font-weight: bold; font-size: 1.1rem; display: inline-flex; align-items: center; justify-content: center; }
     </style>
@@ -250,6 +251,7 @@
     <div class="modal-overlay" id="variant-modal">
         <div class="modal-box">
             <div class="modal-header" id="modal-card-title">Karte bearbeiten</div>
+            <div class="modal-subtitle" id="modal-card-subtitle">Optionen anpassen</div>
             <div>
                 <div class="variant-row" id="row-var-normal">
                     <span>Standard / Normal</span>
@@ -350,11 +352,14 @@
             return `https://images.pokemontcg.io/${set.id.toLowerCase()}/symbol.png`;
         }
 
+        /* ERKENNUNG VON HIT- / ULTRA-RARE KARTEN (NUR 1 SPEZIELLE VARIANTE) */
         function checkIsUltraRareCard(cardName) {
             const nameLower = (cardName || '').toLowerCase();
             return nameLower.includes('-ex') || nameLower.includes(' ex') || 
                    nameLower.includes(' v') || nameLower.includes('vmax') || 
-                   nameLower.includes('vstar') || nameLower.includes('gx');
+                   nameLower.includes('vstar') || nameLower.includes('gx') ||
+                   nameLower.includes('full art') || nameLower.includes('secret rare') ||
+                   nameLower.includes('illustration rare') || nameLower.includes('ace spec');
         }
 
         async function init(forceRefresh = false) {
@@ -561,7 +566,7 @@
 
             if (total === 0) {
                 if (checkIsUltraRareCard(cardName)) {
-                    cardData.holo = 1; cardData.normal = 0;
+                    cardData.holo = 1; cardData.normal = 0; cardData.reverse = 0;
                 } else {
                     cardData.normal = 1;
                 }
@@ -624,13 +629,32 @@
             progressFill.style.width = `${pct}%`;
         }
 
+        /* MODAL ÖFFNEN MIT AUTOMATISCHER FILTERUNG JE NACH KARTEN-TYP */
         function openModal(cardId, cardName, setId = currentSetId) {
             activeEditCardId = cardId;
             currentSetId = setId;
             const collection = getSetCollection(setId);
             const cardData = collection[cardId] || { normal: 0, reverse: 0, holo: 0 };
 
+            const isUltraRare = checkIsUltraRareCard(cardName);
+
             document.getElementById('modal-card-title').textContent = cardName;
+            
+            if (isUltraRare) {
+                document.getElementById('modal-card-subtitle').textContent = '⭐ Ultra Rare / Special Art (Einheitliche Variante)';
+                document.getElementById('row-var-normal').style.display = 'none';
+                document.getElementById('row-var-reverse').style.display = 'none';
+                document.getElementById('row-var-holo').style.display = 'flex';
+                // Zur Sicherheit Normal/Reverse Nullen
+                cardData.normal = 0;
+                cardData.reverse = 0;
+            } else {
+                document.getElementById('modal-card-subtitle').textContent = 'Varianten verwalten';
+                document.getElementById('row-var-normal').style.display = 'flex';
+                document.getElementById('row-var-reverse').style.display = 'flex';
+                document.getElementById('row-var-holo').style.display = 'flex';
+            }
+
             document.getElementById('var-count-normal').textContent = cardData.normal || 0;
             document.getElementById('var-count-reverse').textContent = cardData.reverse || 0;
             document.getElementById('var-count-holo').textContent = cardData.holo || 0;

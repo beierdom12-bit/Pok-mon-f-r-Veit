@@ -146,7 +146,7 @@
         .set-item-top { display: flex; justify-content: space-between; align-items: center; }
         .set-item-left { display: flex; align-items: center; gap: 12px; overflow: hidden; }
         
-        /* FESTER KÜRZEL-BADGE ANSTELLE VON DEFEKTEN BILDERN */
+        /* FESTER KÜRZEL-BADGE ANSTELLE VON BILDERN */
         .set-badge-icon { 
             width: 44px; 
             height: 36px; 
@@ -357,7 +357,7 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
-        /* ZUORDNUNG DER ECHTEN KÜRZEL FÜR ALLE SETS */
+        /* ZUORDNUNG DER ECHTEN KÜRZEL FÜR ALLE NORMALEN SETS */
         const KNOWN_SETS_DB = {
             'base1': { code: 'BS', total: 102 },
             'base2': { code: 'JU', total: 64 },
@@ -466,13 +466,7 @@
             'sv6':   { code: 'TWM', total: 167 },
             'sv6.5': { code: 'SFA', total: 64 },
             'sv7':   { code: 'SCR', total: 142 },
-            'sv8':   { code: 'SSP', total: 191 },
-            '30th':  { code: '30C', total: 100 },
-            'me01':  { code: 'MEG', total: 200 },
-            'me02':  { code: 'ASC', total: 217 },
-            'me03':  { code: 'POR', total: 175 },
-            'me04':  { code: 'CRI', total: 190 },
-            'me05':  { code: 'PBL', total: 180 }
+            'sv8':   { code: 'SSP', total: 191 }
         };
 
         const trackerStatus = document.getElementById('tracker-status');
@@ -504,7 +498,23 @@
 
         function getSetYearAndCode(set) {
             const idClean = set.id.toLowerCase();
-            let code = (KNOWN_SETS_DB[idClean] && KNOWN_SETS_DB[idClean].code) ? KNOWN_SETS_DB[idClean].code : idClean.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
+            const nameLower = (set.name || '').toLowerCase();
+            
+            // 1. Fallback oder bekannte DB für normale Sets
+            let code = (KNOWN_SETS_DB[idClean] && KNOWN_SETS_DB[idClean].code) 
+                ? KNOWN_SETS_DB[idClean].code 
+                : idClean.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
+
+            // 2. ABSOLUT ZWINGENDE NAMENS-ZUWEISUNG FÜR 2026er CUSTOM SETS
+            // Hiermit hebeln wir jegliches ID-Chaos aus!
+            if (nameLower.includes('mega evolution energy')) code = 'MEE';
+            else if (nameLower.includes('mega evolution')) code = 'MEG';
+            else if (nameLower.includes('phantasmal flames')) code = 'PFL';
+            else if (nameLower.includes('ascended heroes')) code = 'ASC';
+            else if (nameLower.includes('perfect order')) code = 'POR';
+            else if (nameLower.includes('chaos rising')) code = 'CRI';
+            else if (nameLower.includes('pitch black')) code = 'PBL';
+            else if (nameLower.includes('30th')) code = '30C';
 
             let year = null;
             if (set.releaseDate) {
@@ -514,8 +524,9 @@
                 }
             }
 
+            // Sichere Einsortierung in 2026 für die neuen Sets
             if (!year) {
-                if (idClean.startsWith('me')) year = 2026;
+                if (code === 'MEE' || code === 'MEG' || code === 'PFL' || code === 'ASC' || code === 'POR' || code === 'CRI' || code === 'PBL' || code === '30C' || idClean.startsWith('me')) year = 2026;
                 else if (idClean.startsWith('sv')) year = 2023;
                 else if (idClean.startsWith('swsh')) year = 2021;
                 else if (idClean.startsWith('sm')) year = 2018;
@@ -634,7 +645,12 @@
                 itemsList.forEach(item => {
                     const s = item.set;
                     const info = item.info;
-                    const dbTotal = KNOWN_SETS_DB[s.id.toLowerCase()] ? KNOWN_SETS_DB[s.id.toLowerCase()].total : 0;
+                    
+                    // DB Zuweisung auch nochmal checken falls dort die total Counts hart codiert wurden
+                    const dbTotal = (KNOWN_SETS_DB[s.id.toLowerCase()] && KNOWN_SETS_DB[s.id.toLowerCase()].total) 
+                                     ? KNOWN_SETS_DB[s.id.toLowerCase()].total 
+                                     : 0;
+                    
                     const total = dbTotal || s.cardCount.official || s.cardCount.total || 0;
                     
                     const collection = getSetCollection(s.id);
@@ -654,7 +670,6 @@
                     const setRow = document.createElement('div');
                     setRow.className = 'set-item-row';
                     
-                    // HIER SETZEN WIR DIREKT DAS TEXT-KÜRZEL EIN
                     setRow.innerHTML = `
                         <div class="set-item-top">
                             <div class="set-item-left">
@@ -974,7 +989,7 @@
         document.getElementById('btn-refresh-database').addEventListener('click', () => init(true));
         document.getElementById('btn-back-to-series').addEventListener('click', showSeriesList);
 
-        document.getElementById('btn-normal-minus').addEventListener('click', () => adjustValue = adjustVariant('normal', -1));
+        document.getElementById('btn-normal-minus').addEventListener('click', () => adjustVariant('normal', -1));
         document.getElementById('btn-normal-plus').addEventListener('click', () => adjustVariant('normal', 1));
         document.getElementById('btn-reverse-minus').addEventListener('click', () => adjustVariant('reverse', -1));
         document.getElementById('btn-reverse-plus').addEventListener('click', () => adjustVariant('reverse', 1));

@@ -253,7 +253,7 @@
         .modal-nav-next { right: 0px; }
 
         .modal-header { font-weight: 800; font-size: 1.05rem; text-align: center; color: var(--text-main); }
-        .modal-subtitle { font-size: 0.75rem; color: var(--primary-color); font-weight: 700; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; width: 100%; text-align: center; }
+        .modal-subtitle { font-size: 0.75rem; color: var(--primary-color); font-weight: 700; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; width: 100%; text-align: center; transition: color 0.3s; }
         .variant-wrapper { width: 100%; }
         .variant-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); }
         .counter-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--surface-card); color: var(--text-main); cursor: pointer; font-weight: bold; font-size: 1.1rem; display: inline-flex; align-items: center; justify-content: center; }
@@ -290,7 +290,6 @@
             </div>
         </div>
 
-        <!-- SET DETAIL ANSICHT -->
         <div id="set-detail-view" style="display:none;">
             <div class="set-banner-box" id="set-banner-box">
                 <img id="set-banner-logo" class="set-banner-logo" src="" alt="Set Logo">
@@ -319,10 +318,10 @@
             </div>
 
             <div class="modal-header" id="modal-card-title">Karte bearbeiten</div>
-            <div class="modal-subtitle" id="modal-card-subtitle">Optionen anpassen</div>
+            <div class="modal-subtitle" id="modal-card-subtitle">Lade Varianten...</div>
             
             <div class="variant-wrapper">
-                <div class="variant-row" id="row-var-normal">
+                <div class="variant-row" id="row-var-normal" style="display:none;">
                     <span>Standard / Normal</span>
                     <div>
                         <button class="counter-btn" id="btn-normal-minus">-</button>
@@ -330,7 +329,7 @@
                         <button class="counter-btn" id="btn-normal-plus">+</button>
                     </div>
                 </div>
-                <div class="variant-row" id="row-var-reverse">
+                <div class="variant-row" id="row-var-reverse" style="display:none;">
                     <span>Reverse Holo</span>
                     <div>
                         <button class="counter-btn" id="btn-reverse-minus">-</button>
@@ -338,7 +337,7 @@
                         <button class="counter-btn" id="btn-reverse-plus">+</button>
                     </div>
                 </div>
-                <div class="variant-row" id="row-var-holo">
+                <div class="variant-row" id="row-var-holo" style="display:none;">
                     <span>Holo / Special Art</span>
                     <div>
                         <button class="counter-btn" id="btn-holo-minus">-</button>
@@ -365,7 +364,6 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
-        /* VOLLSTÄNDIGE UND EXAKTE DATENBANK FÜR ALLE MODERNEN & KLASSISCHEN SETS */
         const KNOWN_SETS_DB = {
             // 2025
             'sv08.5': { code: 'PRE', year: 2025, releaseDate: '2025-01-17', total: 175 },
@@ -518,7 +516,6 @@
 
         function getSetYearAndCode(set) {
             const rawId = set.id.toLowerCase();
-            // Wandelt z.B. sv06 -> sv6 um, um leading zeroes abzufangen
             const idClean = rawId.replace(/^([a-z]+)0+([0-9]+)/, '$1$2');
             const nameLower = (set.name || '').toLowerCase();
             
@@ -526,7 +523,6 @@
             let year = null;
             let releaseDate = null; 
 
-            // 1. Suche in Datenbank (mit normalisierter ID oder Raw ID)
             const dbMatch = KNOWN_SETS_DB[rawId] || KNOWN_SETS_DB[idClean];
             if (dbMatch) {
                 if (dbMatch.code) code = dbMatch.code;
@@ -534,7 +530,6 @@
                 if (dbMatch.releaseDate) releaseDate = dbMatch.releaseDate;
             }
 
-            // 2. Namens-Prüfung für deutsche / englische Custom & Spezial-Sets
             if (nameLower.includes('maskerade') || nameLower.includes('twilight masq')) { code = 'TWM'; year = 2024; releaseDate = '2024-05-24'; }
             else if (nameLower.includes('gewalten der zeit') || nameLower.includes('temporal forces')) { code = 'TEF'; year = 2024; releaseDate = '2024-03-22'; }
             else if (nameLower.includes('paldeas schicksale') || nameLower.includes('paldean fates')) { code = 'PAF'; year = 2024; releaseDate = '2024-01-26'; }
@@ -551,7 +546,6 @@
             else if (nameLower.includes('pitch black')) { code = 'PBL'; year = 2026; releaseDate = '2026-08-01'; }
             else if (nameLower.includes('30th')) { code = '30C'; year = 2026; releaseDate = '2026-10-01'; }
 
-            // 3. Fallback für unbekannte API-Einträge
             if (!year) {
                 if (set.releaseDate) {
                     const parts = set.releaseDate.split('-');
@@ -652,7 +646,6 @@
 
             const renderAccordionCard = (groupTitle, itemsList, isSpecial = false) => {
                 
-                // Exakte Sortierung innerhalb des Jahres: Jüngstes oben, Ältestes unten
                 itemsList.sort((a, b) => {
                     const dateA = a.info.releaseDate || '';
                     const dateB = b.info.releaseDate || '';
@@ -842,7 +835,7 @@
             progressFill.style.width = `${pct}%`;
         }
 
-        function openModalByIndex(index) {
+        async function openModalByIndex(index) {
             if (index < 0 || index >= currentCards.length) return;
             activeEditCardIndex = index;
 
@@ -857,31 +850,53 @@
             initialCardState = { normal: cardData.normal || 0, reverse: cardData.reverse || 0, holo: cardData.holo || 0 };
             tempCardState = { ...initialCardState };
 
-            const isUltraRare = checkIsUltraRareCard(card.name);
             const cardImgHigh = card.image ? `${card.image}/high.webp` : `https://assets.tcgdex.net/de/${currentSetId}/${card.localId}/high.webp`;
 
             document.getElementById('modal-card-img-large').src = cardImgHigh;
             document.getElementById('modal-card-title').textContent = `#${card.localId} ${card.name}`;
             
-            if (isUltraRare) {
-                document.getElementById('modal-card-subtitle').textContent = '⭐ Ultra Rare / Special Art';
-                document.getElementById('row-var-normal').style.display = 'none';
-                document.getElementById('row-var-reverse').style.display = 'none';
-                document.getElementById('row-var-holo').style.display = 'flex';
-                tempCardState.normal = 0;
-                tempCardState.reverse = 0;
-            } else {
-                document.getElementById('modal-card-subtitle').textContent = 'Varianten verwalten';
-                document.getElementById('row-var-normal').style.display = 'flex';
-                document.getElementById('row-var-reverse').style.display = 'flex';
-                document.getElementById('row-var-holo').style.display = 'flex';
-            }
-
             document.getElementById('var-count-normal').textContent = tempCardState.normal;
             document.getElementById('var-count-reverse').textContent = tempCardState.reverse;
             document.getElementById('var-count-holo').textContent = tempCardState.holo;
             
+            // FENSTER SOFORT ÖFFNEN, ABER ZEILEN VERSTECKEN
             document.getElementById('variant-modal').classList.add('open');
+            document.getElementById('modal-card-subtitle').textContent = 'Lade offizielle Varianten...';
+            document.getElementById('row-var-normal').style.display = 'none';
+            document.getElementById('row-var-reverse').style.display = 'none';
+            document.getElementById('row-var-holo').style.display = 'none';
+
+            // DYNAMISCH DIE ECHTEN DATEN DIESER KARTE ABFRAGEN
+            try {
+                let detailRes = await fetch(`${API_BASE_DE}/cards/${card.id}`);
+                if (!detailRes.ok) detailRes = await fetch(`${API_BASE_EN}/cards/${card.id}`);
+                
+                if (detailRes.ok) {
+                    const detail = await detailRes.json();
+                    const v = detail.variants || { normal: true, reverse: true, holo: true };
+                    
+                    document.getElementById('row-var-normal').style.display = v.normal ? 'flex' : 'none';
+                    document.getElementById('row-var-reverse').style.display = v.reverse ? 'flex' : 'none';
+                    document.getElementById('row-var-holo').style.display = v.holo ? 'flex' : 'none';
+                    
+                    // Zeige die offizielle Seltenheit als Untertitel, wenn vorhanden
+                    document.getElementById('modal-card-subtitle').textContent = detail.rarity ? `Seltenheit: ${detail.rarity}` : 'Varianten verwalten';
+                } else {
+                    throw new Error('API Error');
+                }
+            } catch (e) {
+                // FALLBACK, falls du offline bist oder die API kurz streikt
+                const isUltraRare = checkIsUltraRareCard(card.name);
+                if (isUltraRare) {
+                    document.getElementById('modal-card-subtitle').textContent = '⭐ Ultra Rare / Special Art';
+                    document.getElementById('row-var-holo').style.display = 'flex';
+                } else {
+                    document.getElementById('modal-card-subtitle').textContent = 'Varianten verwalten (Offline)';
+                    document.getElementById('row-var-normal').style.display = 'flex';
+                    document.getElementById('row-var-reverse').style.display = 'flex';
+                    document.getElementById('row-var-holo').style.display = 'flex';
+                }
+            }
         }
 
         function adjustVariant(type, amount) {

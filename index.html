@@ -170,8 +170,8 @@
         }
 
         .set-badge-symbol-img { 
-            max-width: 78%; 
-            max-height: 78%; 
+            max-width: 80%; 
+            max-height: 80%; 
             object-fit: contain; 
         }
 
@@ -352,7 +352,8 @@
     </div>
 
     <script>
-        const API_BASE = 'https://api.tcgdex.net/v2/de';
+        const API_BASE_EN = 'https://api.tcgdex.net/v2/en';
+        const API_BASE_DE = 'https://api.tcgdex.net/v2/de';
         
         let allSetsData = [];
         let currentCards = [];
@@ -367,24 +368,7 @@
         /* SETS DIE EXPLIZIT KEIN GRAFIK-SYMBOL HABEN (z. B. 151, PROMO-SETS) */
         const TEXT_ONLY_SETS = ['sv03.5', 'mew', '151', 'swsh07.5', 'cel25', 'promos', 'smp', 'dpp', 'bwp', 'xyp'];
 
-        /* EXAKTE LOOKUP-TABLE FÜR DIE OFFICIELLEN SCHWARZEN POKEMON TCG SYMBOLE */
-        const POKEMON_SYMBOL_LOOKUP = {
-            'swsh12': 'swsh12', 'swsh12.5': 'swsh12pt5', 'swsh11': 'swsh11', 'swsh10.5': 'pgo',
-            'swsh10': 'swsh10', 'swsh09': 'swsh9', 'swsh08': 'swsh8', 'swsh07': 'swsh7',
-            'swsh06': 'swsh6', 'swsh05': 'swsh5', 'swsh04.5': 'swsh4pt5', 'swsh04': 'swsh4',
-            'swsh03': 'swsh3', 'swsh02': 'swsh2', 'swsh01': 'swsh1',
-            
-            'sv08.5': 'sv8pt5', 'sv08': 'sv8', 'sv07': 'sv7', 'sv06.5': 'sv6pt5',
-            'sv06': 'sv6', 'sv05': 'sv5', 'sv04.5': 'sv4pt5', 'sv04': 'sv4',
-            'sv03': 'sv3', 'sv02': 'sv2', 'sv01': 'sv1',
-
-            'sm12': 'sm12', 'sm11.5': 'sm11pt5', 'sm11': 'sm11', 'sm10': 'sm10', 'sm09': 'sm9',
-            'sm08': 'sm8', 'sm07.5': 'sm7pt5', 'sm07': 'sm7', 'sm06': 'sm6', 'sm05': 'sm5',
-            'sm04': 'sm4', 'sm03.5': 'sm3pt5', 'sm03': 'sm3', 'sm02': 'sm2', 'sm01': 'sm1',
-
-            'base1': 'base1', 'ju': 'base2', 'fo': 'base3', 'tr': 'base4'
-        };
-
+        /* ENGLISCHE UND DEUTSCHE NAMEN FÜR GEPLANTE / ZUKÜNFTIGE SETS */
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
             'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', nameEn: 'Pitch Black', nameDe: 'Dunkelnacht', total: 180 },
@@ -440,31 +424,13 @@
 
         function getSetSymbolUrl(setId, setObj) {
             const rawId = setId.toLowerCase();
-            
             if (TEXT_ONLY_SETS.includes(rawId)) {
                 return ''; 
             }
-
-            let normalizedId = rawId;
-            const match = rawId.match(/^(swsh|sv|sm)(\d+)(\..*)?$/);
-            if (match) {
-                const prefix = match[1];
-                const num = parseInt(match[2], 10);
-                const suffix = match[3] || '';
-                const numPadded = num < 10 ? '0' + num : '' + num;
-                normalizedId = `${prefix}${numPadded}${suffix}`;
-            }
-
-            const mappedId = POKEMON_SYMBOL_LOOKUP[normalizedId] || POKEMON_SYMBOL_LOOKUP[rawId];
-            if (mappedId) {
-                return `https://images.pokemontcg.io/${mappedId}/symbol.png`;
-            }
-            
             if (setObj && setObj.symbol) {
                 return setObj.symbol.startsWith('http') ? `${setObj.symbol}.png` : setObj.symbol;
             }
-
-            return '';
+            return `https://assets.tcgdex.net/en/${setId}/symbol.png`;
         }
 
         function checkIsUltraRareCard(cardName) {
@@ -482,14 +448,15 @@
             try {
                 let fetchedSets = [];
                 try {
-                    const resSets = await fetch(`${API_BASE}/sets`);
+                    // RUFE ENGLISCHE SET-LISTE FÜR PERFEKTE MATCHE UND SYMBOLE AB
+                    const resSets = await fetch(`${API_BASE_EN}/sets`);
                     if (resSets.ok) fetchedSets = await resSets.json();
                 } catch (apiErr) {}
 
                 if (!fetchedSets || fetchedSets.length === 0) {
                     allSetsData = Object.keys(KNOWN_SETS_DB).map(id => ({
                         id: id, 
-                        name: KNOWN_SETS_DB[id].nameDe, 
+                        name: KNOWN_SETS_DB[id].nameEn, 
                         releaseDate: KNOWN_SETS_DB[id].releaseDate,
                         cardCount: { official: KNOWN_SETS_DB[id].total, total: KNOWN_SETS_DB[id].total }
                     }));
@@ -530,9 +497,10 @@
                 const year = info.year;
 
                 if (searchLower) {
-                    const matchNameDe = (set.name || '').toLowerCase().includes(searchLower);
+                    const matchNameEn = (set.name || '').toLowerCase().includes(searchLower);
+                    const matchNameDe = (info.nameDe || '').toLowerCase().includes(searchLower);
                     const matchCode = (info.code || '').toLowerCase().includes(searchLower);
-                    if (!matchNameDe && !matchCode && !year.toString().includes(searchLower)) return;
+                    if (!matchNameEn && !matchNameDe && !matchCode && !year.toString().includes(searchLower)) return;
                 }
 
                 if (!groupedByYear[year]) groupedByYear[year] = [];
@@ -649,9 +617,16 @@
             try {
                 let setData = null;
                 try {
-                    const res = await fetch(`${API_BASE}/sets/${setId}`);
+                    // KARTEN UND BANNER-LOGO BLEIBEN AUF DEUTSCH!
+                    const res = await fetch(`${API_BASE_DE}/sets/${setId}`);
                     if (res.ok) setData = await res.json();
                 } catch (e) {}
+
+                if (!setData || !setData.cards || setData.cards.length === 0) {
+                    // FALLBACK: ENGLISCH LANDEN FALLS KEINE DEUTSCHEN DATEN GEFUNDEN WURDEN
+                    const resEn = await fetch(`${API_BASE_EN}/sets/${setId}`);
+                    if (resEn.ok) setData = await resEn.json();
+                }
 
                 if (setData) {
                     currentSetName = setData.name || 'Pokémon Set';

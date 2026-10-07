@@ -373,7 +373,7 @@
             'misc', 'wp', 'jumb', 'tk', 'me01', 'me02', 'me03', 'me04', 'me05', '30th', 'pfl', 'mee'
         ];
 
-        /* EXAKTER SET-OVERRIDE FÜR DIE ID-ZUORDNUNG */
+        /* LOOKUP DATABASE MIT EXAKTEN METADATEN */
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
             'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', nameEn: 'Pitch Black', nameDe: 'Dunkelnacht', total: 180 },
@@ -456,11 +456,9 @@
                    nameLower.includes('illustration rare') || nameLower.includes('ace spec');
         }
 
-        /* SANIERUNG DER EMPFANGENEN SET-LISTE */
         function sanitizeSetObject(set) {
             const idClean = set.id.toLowerCase();
 
-            // Spezial-Korrektur für die verdrehten TCGdex-API-Einträge
             if (idClean === 'me02') {
                 set.name = 'Ascended Heroes';
                 return { year: 2026, releaseDate: '2026-01-15', code: 'ASC', nameEn: 'Ascended Heroes', nameDe: 'Erhabene Helden', total: 217 };
@@ -525,7 +523,7 @@
                     allSetsData = fetchedSets.filter(s => s.cardCount && s.cardCount.total > 0);
                 }
 
-                // Stellt sicher, dass gefundene Pflicht-Sets (wie Phantasmal Flames) nicht fehlen
+                // Pflicht-Sets ergänzen
                 const knownIdsPresent = new Set(allSetsData.map(s => s.id.toLowerCase()));
                 Object.keys(KNOWN_SETS_DB).forEach(key => {
                     if (!knownIdsPresent.has(key)) {
@@ -578,15 +576,20 @@
                 'promos': { title: '🎁 Special & Promos', sets: [] }
             };
 
+            // ERZWINGE EINDEUTIGKEIT FÜR NAMEN UND ID
+            const processedNames = new Set();
             const processedIds = new Set();
 
             allSetsData.forEach(set => {
                 const info = sanitizeSetObject(set);
                 const idClean = set.id.toLowerCase();
+                const nameKey = info.nameEn.toLowerCase();
 
-                // Keine Doppelgänger
-                if (processedIds.has(idClean)) return;
+                // Duplikate filtern: Wenn ID oder Name bereits dargestellt wurde, überspringen
+                if (processedIds.has(idClean) || processedNames.has(nameKey)) return;
+                
                 processedIds.add(idClean);
+                processedNames.add(nameKey);
 
                 const year = info.year;
                 const specialKey = getSpecialCategoryKey(set.id, set.name);

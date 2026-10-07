@@ -145,25 +145,32 @@
         .set-item-top { display: flex; justify-content: space-between; align-items: center; }
         .set-item-left { display: flex; align-items: center; gap: 12px; overflow: hidden; }
         
+        /* PRAEZISER SET-SYMBOL-CONTAINER */
         .set-badge-icon { 
-            width: 36px; 
-            height: 36px; 
-            border-radius: 8px; 
-            background: #ffffff; 
+            width: 38px; 
+            height: 38px; 
+            border-radius: 10px; 
+            background: rgba(15, 23, 42, 0.85); 
             border: 1px solid var(--border-color); 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            font-size: 0.7rem; 
+            font-size: 0.72rem; 
             font-weight: 900; 
-            color: #0f172a; 
+            color: #93c5fd; 
             flex-shrink: 0; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             overflow: hidden;
-            padding: 3px;
+            padding: 4px;
         }
 
-        .set-badge-symbol-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 1px rgba(0,0,0,0.5)); }
+        .set-badge-symbol-img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+            filter: drop-shadow(0 0 2px rgba(255,255,255,0.3)); 
+        }
+
         .set-item-name { font-size: 0.88rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .set-item-stats { font-size: 0.8rem; font-weight: 800; color: #cbd5e1; flex-shrink: 0; }
         .set-progress-bg { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; }
@@ -191,7 +198,7 @@
         .pill.holo { background: rgba(245, 158, 11, 0.2); color: #fde047; }
         .card-menu-btn { position: absolute; top: 6px; left: 6px; background: rgba(15, 23, 42, 0.8); color: var(--text-muted); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; z-index: 10; border: 1px solid var(--border-color); }
 
-        /* MODAL STYLES WITH CLOSE X BUTTON & SWIPE */
+        /* MODAL STYLES */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 12px; }
         .modal-overlay.open { display: flex; }
         .modal-box { position: relative; background: #131a29; border-radius: 18px; padding: 18px; width: 95%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); border: 1px solid var(--border-color); max-height: 92vh; overflow-y: auto; display: flex; flex-direction: column; align-items: center; touch-action: pan-y; }
@@ -267,7 +274,6 @@
                 <input type="text" id="series-search-input" class="search-input" placeholder="Serie, Set oder Kürzel suchen (z. B. Silver Tempest, DRI)...">
             </div>
 
-            <!-- SCHNELLE NAVI ZU DEN SPÄTEREN MODULEN -->
             <div class="nav-modules-grid">
                 <a href="binder.html" class="nav-btn">🎴 Meine Karten</a>
                 <a href="generator.html" class="nav-btn">📄 Platzhalter PDF</a>
@@ -351,9 +357,17 @@
         let currentSetLogo = '';
         let activeEditCardIndex = -1;
 
-        // Speicher-Status Tracking
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
+
+        /* PRÄZISE MAPPING DAFÜR, DASS JEDES SET DAS ECHTE UNTEN-LINKS-SYMBOL ERHÄLT */
+        const POKEMONTCG_IO_SET_MAP = {
+            'base1': 'base1', 'ju': 'base2', 'fo': 'base3', 'tr': 'base4', 'neo1': 'neo1',
+            'ex01': 'ex1', 'dp01': 'dp1', 'bw01': 'bw1', 'hgss01': 'hgss1',
+            'sv01': 'sv1', 'sv02': 'sv2', 'sv03': 'sv3', 'sv03.5': 'sv3pt5', 'sv04': 'sv4',
+            'sv04.5': 'sv4pt5', 'sv05': 'sv5', 'sv06': 'sv6', 'sv06.5': 'sv6pt5', 'sv07': 'sv7',
+            'sv08': 'sv8', 'sv08.5': 'sv8pt5', 'sv09': 'sv9', 'sv10': 'sv10'
+        };
 
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
@@ -408,11 +422,11 @@
             try { localStorage.setItem(`collection_${setId}`, JSON.stringify(data)); } catch(e) {}
         }
 
+        /* DYNAMISCHE SYMBOOL-ABFRAGE FÜR DIE KARTEN-ECKE UNTEN LINKS */
         function getSetSymbolUrl(set, infoCode) {
-            if (set.symbol) {
-                return set.symbol.startsWith('http') ? `${set.symbol}.png` : `${set.symbol}.png`;
-            }
-            return `https://images.pokemontcg.io/${set.id.toLowerCase()}/symbol.png`;
+            const cleanId = set.id.toLowerCase();
+            const ioSetId = POKEMONTCG_IO_SET_MAP[cleanId] || cleanId;
+            return `https://images.pokemontcg.io/${ioSetId}/symbol.png`;
         }
 
         function checkIsUltraRareCard(cardName) {
@@ -721,7 +735,6 @@
             progressFill.style.width = `${pct}%`;
         }
 
-        /* MODAL ÖFFNEN PER INDEX */
         function openModalByIndex(index) {
             if (index < 0 || index >= currentCards.length) return;
             activeEditCardIndex = index;
@@ -730,7 +743,6 @@
             const collection = getSetCollection(currentSetId);
             const cardData = collection[card.id] || { normal: 0, reverse: 0, holo: 0 };
 
-            // Speichere den Ursprungswert für Nachfragen beim Schließen
             initialCardState = { normal: cardData.normal || 0, reverse: cardData.reverse || 0, holo: cardData.holo || 0 };
             tempCardState = { ...initialCardState };
 
@@ -767,7 +779,6 @@
             document.getElementById(`var-count-${type}`).textContent = tempCardState[type];
         }
 
-        /* SPEICHERN UND SCHLIESSEN LOGIK */
         function saveAndCloseModal() {
             if (activeEditCardIndex < 0) return;
             const card = currentCards[activeEditCardIndex];
@@ -785,7 +796,6 @@
             closeModalDirectly();
         }
 
-        /* SCHLIESSEN PER X (MIT NACHFRAGE BEI ÄNDERUNGEN) */
         function attemptCloseWithX() {
             const hasChanged = tempCardState.normal !== initialCardState.normal ||
                                tempCardState.reverse !== initialCardState.reverse ||
@@ -806,9 +816,7 @@
             activeEditCardIndex = -1;
         }
 
-        /* NAVIGATION & SWIPE LOGIK FÜR DAS MODAL */
         function navigateModal(direction) {
-            // Beim Wischen/Pfeil-Klick automatisch den aktuellen Stand speichern
             if (activeEditCardIndex >= 0) {
                 saveAndCloseModal();
             }

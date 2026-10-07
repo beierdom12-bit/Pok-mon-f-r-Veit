@@ -310,7 +310,6 @@
 
     <script>
         const API_BASE = 'https://api.tcgdex.net/v2/de';
-        const POKEMON_TCG_IO_BASE = 'https://api.pokemontcg.io/v2/cards';
         
         let allSetsData = [];
         let currentCards = [];
@@ -321,13 +320,6 @@
 
         let binderCardsList = [];
         let currentBinderPage = 0;
-
-        const POKEMONTCG_IO_SET_MAP = {
-            'base1': 'base1', 'ju': 'base2', 'fo': 'base3', 'tr': 'base4', 'neo1': 'neo1',
-            'ex01': 'ex1', 'dp01': 'dp1', 'bw01': 'bw1', 'hgss01': 'hgss1',
-            'xy-promos': 'xyp', 'xyp': 'xyp', 'sm-promos': 'smp', 'smp': 'smp',
-            'swsh-promos': 'swshp', 'swshp': 'swshp', 'sv-promos': 'svp', 'svp': 'svp'
-        };
 
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
@@ -382,24 +374,21 @@
             try { localStorage.setItem(`collection_${setId}`, JSON.stringify(data)); } catch(e) {}
         }
 
-        // KORRIGIERTE VORDERSEITEN-BILD-URL LOGIK
-        function buildFrontCardImageUrl(setId, localNum) {
+        function getDirectCardImgUrl(cardObj, setId) {
+            if (cardObj && cardObj.image) {
+                return cardObj.image.endsWith('/high.webp') || cardObj.image.endsWith('/low.webp') 
+                    ? cardObj.image 
+                    : `${cardObj.image}/high.webp`;
+            }
+            const localNum = cardObj.localId || cardObj.id;
             return `https://assets.tcgdex.net/de/${setId}/${localNum}/high.webp`;
         }
 
-        function handleCardImgError(imgElement, setId, localNum) {
-            const ioSetId = POKEMONTCG_IO_SET_MAP[setId.toLowerCase()] || setId.toLowerCase();
-            imgElement.src = `https://images.pokemontcg.io/${ioSetId}/${localNum}.png`;
-        }
-
         function getSetSymbolUrl(set, infoCode) {
-            const setIdClean = set.id.toLowerCase();
             if (set.symbol) {
-                if (set.symbol.startsWith('http')) return `${set.symbol}.png`;
-                return `${set.symbol}.png`;
+                return set.symbol.startsWith('http') ? `${set.symbol}.png` : `${set.symbol}.png`;
             }
-            const ioSetId = POKEMONTCG_IO_SET_MAP[setIdClean] || setIdClean;
-            return `https://images.pokemontcg.io/${ioSetId}/symbol.png`;
+            return `https://images.pokemontcg.io/${set.id.toLowerCase()}/symbol.png`;
         }
 
         function checkIsUltraRareCard(cardName) {
@@ -607,9 +596,13 @@
                     const cData = collection[cardId];
                     const total = (cData.normal || 0) + (cData.reverse || 0) + (cData.holo || 0);
                     if (total > 0) {
-                        const localParts = cardId.split('-');
-                        const localNum = localParts[1] || cardId;
+                        const localNum = cData.localId || cardId.split('-')[1] || cardId;
                         const numVal = parseInt(localNum) || 999;
+
+                        let imgSrc = cData.image || `https://assets.tcgdex.net/de/${s.id}/${localNum}/high.webp`;
+                        if (!imgSrc.endsWith('.webp') && !imgSrc.endsWith('.png')) {
+                            imgSrc = `${imgSrc}/high.webp`;
+                        }
 
                         binderCardsList.push({
                             id: cardId,
@@ -620,7 +613,7 @@
                             numVal: numVal,
                             count: total,
                             releaseDate: info.releaseDate || '2024-01-01',
-                            image: buildFrontCardImageUrl(s.id, localNum)
+                            image: imgSrc
                         });
                     }
                 }
@@ -663,7 +656,7 @@
                     const card = pageItems[i];
                     slot.innerHTML = `
                         <div class="my-binder-badge">${card.count}x</div>
-                        <img class="my-binder-img" src="${card.image}" alt="${card.name}" loading="lazy" onerror="handleCardImgError(this, '${card.setId}', '${card.localNum}')">
+                        <img class="my-binder-img" src="${card.image}" alt="${card.name}" loading="lazy">
                         <div class="my-binder-info-overlay">#${card.localNum} ${card.name}</div>
                     `;
                     slot.onclick = () => openModal(card.id, card.name, card.setId);
@@ -724,9 +717,16 @@
             }
         }
 
-        function handleCardClick(setId, cardId, cardName) {
+        function handleCardClick(setId, cardObj) {
+            const cardId = typeof cardObj === 'string' ? cardObj : cardObj.id;
+            const cardName = cardObj.name || cardId;
             const collection = getSetCollection(setId);
-            const cardData = collection[cardId] || { normal: 0, reverse: 0, holo: 0, name: cardName };
+            const cardData = collection[cardId] || { normal: 0, reverse: 0, holo: 0 };
+
+            cardData.name = cardName;
+            cardData.localId = cardObj.localId || cardId;
+            cardData.image = cardObj.image || `https://assets.tcgdex.net/de/${setId}/${cardData.localId}/high.webp`;
+
             const total = (cardData.normal || 0) + (cardData.reverse || 0) + (cardData.holo || 0);
 
             if (total === 0) {
@@ -735,7 +735,6 @@
                 } else {
                     cardData.normal = 1;
                 }
-                cardData.name = cardName;
                 collection[cardId] = cardData;
                 saveSetCollection(setId, collection);
                 renderTrackerGrid();
@@ -766,9 +765,10 @@
 
                 const cardEl = document.createElement('div');
                 cardEl.className = `tracker-card ${isOwned ? 'owned' : ''}`;
-                let imgUrl = buildFrontCardImageUrl(currentSetId, c.localId);
+                
+                let imgUrl = c.image ? `${c.image}/low.webp` : `https://assets.tcgdex.net/de/${currentSetId}/${c.localId}/low.webp`;
 
-                cardEl.addEventListener('click', () => handleCardClick(currentSetId, c.id, c.name));
+                cardEl.addEventListener('click', () => handleCardClick(currentSetId, c));
 
                 let pillsHtml = '';
                 if (norm > 0) pillsHtml += `<span class="pill">${norm}x N</span>`;
@@ -778,7 +778,7 @@
                 cardEl.innerHTML = `
                     <div class="card-menu-btn">⚙</div>
                     <div class="count-badge">${total}x</div>
-                    <img class="tracker-card-img" src="${imgUrl}" alt="${c.name}" loading="lazy" onerror="handleCardImgError(this, '${currentSetId}', '${c.localId}')">
+                    <img class="tracker-card-img" src="${imgUrl}" alt="${c.name}" loading="lazy">
                     <div class="tracker-card-info">#${c.localId} ${c.name}</div>
                     <div class="variant-pills">${pillsHtml}</div>
                 `;

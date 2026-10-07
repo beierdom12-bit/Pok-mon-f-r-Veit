@@ -131,6 +131,7 @@
         /* REITER / AKKORDEON STYLES */
         .series-accordion-container { display: flex; flex-direction: column; gap: 12px; }
         .year-card { background: var(--surface-card); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; transition: border-color 0.2s; }
+        .year-card.special-group { border-color: rgba(245, 158, 11, 0.3); background: rgba(30, 41, 59, 0.8); }
         .year-card.open { border-color: rgba(59, 130, 246, 0.5); }
         .year-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; cursor: pointer; user-select: none; background: rgba(255, 255, 255, 0.03); }
         .year-title { font-weight: 800; font-size: 1.05rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
@@ -145,7 +146,6 @@
         .set-item-top { display: flex; justify-content: space-between; align-items: center; }
         .set-item-left { display: flex; align-items: center; gap: 12px; overflow: hidden; }
         
-        /* SCHWARZE SYMBOLE AUF SAUBEREM HELLEN BADGE */
         .set-badge-icon { 
             width: 36px; 
             height: 36px; 
@@ -275,7 +275,7 @@
         <div id="main-overview-section">
             <div class="search-box-wrapper">
                 <span class="search-icon">🔍</span>
-                <input type="text" id="series-search-input" class="search-input" placeholder="Serie, Set oder Kürzel suchen (z. B. Silver Tempest, DRI)...">
+                <input type="text" id="series-search-input" class="search-input" placeholder="Serie, Set oder Kürzel suchen (z. B. Silver Tempest, POP, MCD)...">
             </div>
 
             <div class="nav-modules-grid">
@@ -366,9 +366,9 @@
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
         /* SETS DIE EXPLIZIT KEIN GRAFIK-SYMBOL HABEN */
-        const TEXT_ONLY_SETS = ['sv03.5', 'mew', '151', 'swsh07.5', 'cel25', 'promos', 'smp', 'dpp', 'bwp', 'xyp', 'misc', 'wp', 'jumb'];
+        const TEXT_ONLY_SETS = ['sv03.5', 'mew', '151', 'swsh07.5', 'cel25', 'promos', 'smp', 'dpp', 'bwp', 'xyp', 'misc', 'wp', 'jumb', 'tk'];
 
-        /* PRÄZISE MAP VON SET-IDS ZU BEKANNTEN DEUTSCHEN METADATEN UND JAHREN */
+        /* METADATEN ZU BEKANNTEN SETS UND SONDERSERIEN */
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
             'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', nameEn: 'Pitch Black', nameDe: 'Dunkelnacht', total: 180 },
@@ -476,6 +476,19 @@
             }
         }
 
+        /* ERKENNT OB EIN SET ZU EINER SPEZIELLEN KATEGORIE GEHÖRT */
+        function getSpecialCategoryKey(setId, setName) {
+            const id = setId.toLowerCase();
+            const name = (setName || '').toLowerCase();
+
+            if (id.includes('mcd') || name.includes("mcdonald") || name.includes("mc donald")) return 'mcdonalds';
+            if (id.startsWith('pop') || name.startsWith('pop series')) return 'pop';
+            if (id.startsWith('tk') || name.includes('trainer kit') || name.includes('battle deck')) return 'trainerkits';
+            if (id.includes('promo') || id.includes('jumb') || id === 'misc' || id === 'wp' || id === 'si1' || name.includes('promo') || name.includes('jumbo') || name.includes('southern islands')) return 'promos';
+            
+            return null; // Reguläres Set
+        }
+
         function getSetYearAndCode(set) {
             const idClean = set.id.toLowerCase();
             if (KNOWN_SETS_DB[idClean]) return KNOWN_SETS_DB[idClean];
@@ -508,11 +521,19 @@
             const container = document.getElementById('series-accordion-container');
             container.innerHTML = '';
             const searchLower = searchFilter.trim().toLowerCase();
+            
             const groupedByYear = {};
+            const specialGroups = {
+                'mcdonalds': { title: '🍟 McDonald\'s Collection', sets: [] },
+                'pop': { title: '🏆 POP Series (1-9)', sets: [] },
+                'trainerkits': { title: '⚔️ Trainer Kits & Decks', sets: [] },
+                'promos': { title: '🎁 Special & Promos', sets: [] }
+            };
 
             allSetsData.forEach(set => {
                 const info = getSetYearAndCode(set);
                 const year = info.year;
+                const specialKey = getSpecialCategoryKey(set.id, set.name);
 
                 if (searchLower) {
                     const matchNameEn = (set.name || '').toLowerCase().includes(searchLower);
@@ -521,45 +542,46 @@
                     if (!matchNameEn && !matchNameDe && !matchCode && !year.toString().includes(searchLower)) return;
                 }
 
-                if (!groupedByYear[year]) groupedByYear[year] = [];
-                groupedByYear[year].push({ set: set, info: info });
+                if (specialKey && specialGroups[specialKey]) {
+                    specialGroups[specialKey].sets.push({ set: set, info: info });
+                } else {
+                    if (!groupedByYear[year]) groupedByYear[year] = [];
+                    groupedByYear[year].push({ set: set, info: info });
+                }
             });
 
+            // 1. REGULÄRE JAHRES-REITER GENERIEREN (ABSTEIGEND NACH JAHR)
             const sortedYears = Object.keys(groupedByYear).sort((a, b) => parseInt(b) - parseInt(a));
-            if (sortedYears.length === 0) {
-                container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px;">Keine Sets gefunden.</div>';
-                return;
-            }
+            
+            let isFirstAccordion = true;
 
-            let isFirstYear = true;
-            sortedYears.forEach(year => {
-                let itemsInYear = groupedByYear[year];
-
-                itemsInYear.sort((a, b) => {
+            const renderAccordionCard = (groupTitle, itemsList, isSpecial = false) => {
+                // INNEN NACH RELEASE-DATUM SORTIEREN (NEUESTE OBEN)
+                itemsList.sort((a, b) => {
                     const dateA = a.info.releaseDate || a.set.releaseDate || '';
                     const dateB = b.info.releaseDate || b.set.releaseDate || '';
                     if (dateA && dateB) return dateB.localeCompare(dateA);
                     return b.set.id.localeCompare(a.set.id);
                 });
 
-                const yearCard = document.createElement('div');
-                yearCard.className = `year-card ${isFirstYear || searchLower ? 'open' : ''}`;
+                const groupCard = document.createElement('div');
+                groupCard.className = `year-card ${isSpecial ? 'special-group' : ''} ${isFirstAccordion || searchLower ? 'open' : ''}`;
 
-                const yearHeader = document.createElement('div');
-                yearHeader.className = 'year-header';
-                yearHeader.innerHTML = `
+                const groupHeader = document.createElement('div');
+                groupHeader.className = 'year-header';
+                groupHeader.innerHTML = `
                     <div class="year-title">
-                        <span>📅 Jahr ${year}</span>
-                        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">(${itemsInYear.length} Sets)</span>
+                        <span>${groupTitle}</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">(${itemsList.length} Sets)</span>
                     </div>
                     <div class="year-arrow">▼</div>
                 `;
-                yearHeader.onclick = () => yearCard.classList.toggle('open');
+                groupHeader.onclick = () => groupCard.classList.toggle('open');
 
                 const setsList = document.createElement('div');
                 setsList.className = 'year-sets-list';
 
-                itemsInYear.forEach(item => {
+                itemsList.forEach(item => {
                     const s = item.set;
                     const info = item.info;
                     const total = s.cardCount.official || s.cardCount.total || 0;
@@ -567,8 +589,8 @@
                     const collection = getSetCollection(s.id);
                     let owned = 0;
                     for (let id in collection) {
-                        const item = collection[id];
-                        if (((item.normal || 0) + (item.reverse || 0) + (item.holo || 0)) > 0) owned++;
+                        const itemData = collection[id];
+                        if (((itemData.normal || 0) + (itemData.reverse || 0) + (itemData.holo || 0)) > 0) owned++;
                     }
 
                     const pct = total > 0 ? Math.round((owned / total) * 100) : 0;
@@ -608,11 +630,30 @@
                     setsList.appendChild(setRow);
                 });
 
-                yearCard.appendChild(yearHeader);
-                yearCard.appendChild(setsList);
-                container.appendChild(yearCard);
-                isFirstYear = false;
+                groupCard.appendChild(groupHeader);
+                groupCard.appendChild(setsList);
+                container.appendChild(groupCard);
+                isFirstAccordion = false;
+            };
+
+            // RENDER JAHRES-REITER
+            sortedYears.forEach(year => {
+                if (groupedByYear[year].length > 0) {
+                    renderAccordionCard(`📅 Jahr ${year}`, groupedByYear[year], false);
+                }
             });
+
+            // 2. SPEZIAL-REITER GANZ UNTEN ANFÜGEN
+            Object.keys(specialGroups).forEach(key => {
+                const grp = specialGroups[key];
+                if (grp.sets.length > 0) {
+                    renderAccordionCard(grp.title, grp.sets, true);
+                }
+            });
+
+            if (container.children.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px;">Keine Sets gefunden.</div>';
+            }
         }
 
         function showSeriesList() {
@@ -635,13 +676,11 @@
             try {
                 let setData = null;
                 try {
-                    // DEUTSCHE KARTENDATEN LADEN
                     const res = await fetch(`${API_BASE_DE}/sets/${setId}`);
                     if (res.ok) setData = await res.json();
                 } catch (e) {}
 
                 if (!setData || !setData.cards || setData.cards.length === 0) {
-                    // FALLBACK: ENGLISCH FALLS FÜR DAS SET KEINE DEUTSCHEN TRANSLATIONEN VORHANDEN SIND
                     const resEn = await fetch(`${API_BASE_EN}/sets/${setId}`);
                     if (resEn.ok) setData = await resEn.json();
                 }

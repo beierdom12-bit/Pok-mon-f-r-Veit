@@ -146,6 +146,7 @@
         .set-item-top { display: flex; justify-content: space-between; align-items: center; }
         .set-item-left { display: flex; align-items: center; gap: 12px; overflow: hidden; }
         
+        /* SCHWARZE GRAFIK-SYMBOLE */
         .set-badge-icon { 
             width: 36px; 
             height: 36px; 
@@ -155,18 +156,21 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            font-size: 0.65rem; 
-            font-weight: 900; 
-            color: #0f172a; 
             flex-shrink: 0; 
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
             overflow: hidden;
             padding: 4px;
         }
 
+        /* TEXT-BADGE (DUNKEL) FÜR SETS OHNE SYMBOL (151, ASCENDED HEROES ETC.) */
         .set-badge-icon.text-only {
             background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color);
             color: #93c5fd;
+            font-size: 0.65rem; 
+            font-weight: 900; 
+            padding: 0;
+            box-shadow: none;
         }
 
         .set-badge-symbol-img { 
@@ -365,27 +369,13 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
-        /* SETS DIE EXPLIZIT KEIN GRAFIK-SYMBOL HABEN */
-        const TEXT_ONLY_SETS = ['sv03.5', 'mew', '151', 'swsh07.5', 'cel25', 'promos', 'smp', 'dpp', 'bwp', 'xyp', 'misc', 'wp', 'jumb', 'tk'];
+        /* EXPLIZITE SETS OHNE GRAFIK-SYMBOL (151, PROMOS, ZUKÜNFTIGE SETS) */
+        const TEXT_ONLY_SETS = [
+            'sv03.5', 'mew', '151', 'swsh07.5', 'cel25', 'promos', 'smp', 'dpp', 'bwp', 'xyp', 
+            'misc', 'wp', 'jumb', 'tk', 'me01', 'me02', 'me03', 'me04', 'me05', '30th'
+        ];
 
-        /* DIREKTE LOOKUP-TABLE FÜR SYMBOLE VOM POKEMON TCG CDN AS FALLBACK */
-        const POKEMON_SYMBOL_LOOKUP = {
-            'swsh12': 'swsh12', 'swsh12.5': 'swsh12pt5', 'swsh11': 'swsh11', 'swsh10.5': 'pgo',
-            'swsh10': 'swsh10', 'swsh09': 'swsh9', 'swsh08': 'swsh8', 'swsh07': 'swsh7',
-            'swsh06': 'swsh6', 'swsh05': 'swsh5', 'swsh04.5': 'swsh4pt5', 'swsh04': 'swsh4',
-            'swsh03': 'swsh3', 'swsh02': 'swsh2', 'swsh01': 'swsh1',
-            'sv08.5': 'sv8pt5', 'sv08': 'sv8', 'sv07': 'sv7', 'sv06.5': 'sv6pt5',
-            'sv06': 'sv6', 'sv05': 'sv5', 'sv04.5': 'sv4pt5', 'sv04': 'sv4',
-            'sv03': 'sv3', 'sv02': 'sv2', 'sv01': 'sv1',
-            'sm12': 'sm12', 'sm11.5': 'sm11pt5', 'sm11': 'sm11', 'sm10': 'sm10', 'sm09': 'sm9',
-            'sm08': 'sm8', 'sm07.5': 'sm7pt5', 'sm07': 'sm7', 'sm06': 'sm6', 'sm05': 'sm5',
-            'sm04': 'sm4', 'sm03.5': 'sm3pt5', 'sm03': 'sm3', 'sm02': 'sm2', 'sm01': 'sm1',
-            'neo1': 'neo1', 'neo2': 'neo2', 'neo3': 'neo3', 'neo4': 'neo4',
-            'gym1': 'gym1', 'gym2': 'gym2', 'base1': 'base1', 'ju': 'base2', 'fo': 'base3', 'tr': 'base4',
-            'pop1': 'pop1', 'pop2': 'pop2', 'pop3': 'pop3', 'pop4': 'pop4', 'pop5': 'pop5',
-            'ru1': 'ru1', 'rumble': 'ru1'
-        };
-
+        /* METADATEN FÜR ZUKÜNFTIGE & HISTORISCHE SETS */
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
             'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', nameEn: 'Pitch Black', nameDe: 'Dunkelnacht', total: 180 },
@@ -455,15 +445,6 @@
                 return setObj.symbol.endsWith('.png') ? setObj.symbol : `${setObj.symbol}.png`;
             }
             return `https://assets.tcgdex.net/en/${setId}/symbol.png`;
-        }
-
-        function getFallbackSymbolUrl(setId) {
-            const rawId = setId.toLowerCase();
-            const mappedId = POKEMON_SYMBOL_LOOKUP[rawId];
-            if (mappedId) {
-                return `https://images.pokemontcg.io/${mappedId}/symbol.png`;
-            }
-            return '';
         }
 
         function checkIsUltraRareCard(cardName) {
@@ -546,16 +527,12 @@
             return { year: year, releaseDate: set.releaseDate || `${year}-01-01`, code: code, nameEn: set.name, nameDe: set.name };
         }
 
-        function handleSymbolImgError(imgEl, setId, code) {
-            const fallbackUrl = getFallbackSymbolUrl(setId);
-            if (fallbackUrl && imgEl.src !== fallbackUrl) {
-                imgEl.src = fallbackUrl;
-            } else {
-                const parent = imgEl.parentNode;
-                if (parent) {
-                    parent.className = 'set-badge-icon text-only';
-                    parent.innerHTML = `<b>${code}</b>`;
-                }
+        /* SCHALTET BEI FEHLENDEM SYMBOL DIREKT AUF DEN DUNKELN TEXT-BADGE UM (OHNE WEISSEN KASTEN!) */
+        function handleSymbolImgError(imgEl, code) {
+            const parent = imgEl.parentNode;
+            if (parent) {
+                parent.className = 'set-badge-icon text-only';
+                parent.innerHTML = `<b>${code}</b>`;
             }
         }
 
@@ -648,7 +625,7 @@
                     let badgeContent = `<b>${info.code}</b>`;
 
                     if (symbolUrl) {
-                        badgeContent = `<img class="set-badge-symbol-img" src="${symbolUrl}" alt="${info.code}" onclick="event.stopPropagation();" onerror="handleSymbolImgError(this, '${s.id}', '${info.code}')">`;
+                        badgeContent = `<img class="set-badge-symbol-img" src="${symbolUrl}" alt="${info.code}" onclick="event.stopPropagation();" onerror="handleSymbolImgError(this, '${info.code}')">`;
                     } else {
                         badgeClass += ' text-only';
                     }

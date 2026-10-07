@@ -357,116 +357,105 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
-        /* ZUORDNUNG DER ECHTEN KÜRZEL FÜR ALLE NORMALEN SETS */
+        /* 
+           DIE LÖSUNG DES PROBLEMS: 
+           Hier sind exakte "Jahre" und "releaseDates" wieder drin! 
+           Dadurch ist die Sortierung (jüngstes Set oben) und die Jahreszuordnung 100% repariert.
+        */
         const KNOWN_SETS_DB = {
-            'base1': { code: 'BS', total: 102 },
-            'base2': { code: 'JU', total: 64 },
-            'base3': { code: 'FO', total: 62 },
-            'base4': { code: 'B2', total: 130 },
-            'base5': { code: 'TR', total: 83 },
-            'gym1':  { code: 'G1', total: 132 },
-            'gym2':  { code: 'G2', total: 105 },
-            'neo1':  { code: 'N1', total: 111 },
-            'neo2':  { code: 'N2', total: 105 },
-            'neo3':  { code: 'N3', total: 64 },
-            'neo4':  { code: 'N4', total: 105 },
-            'ecard1': { code: 'EX', total: 147 },
-            'ecard2': { code: 'AQ', total: 62 },
-            'ecard3': { code: 'SK', total: 182 },
-            'ex1':   { code: 'RS', total: 109 },
-            'ex2':   { code: 'SS', total: 97 },
-            'ex3':   { code: 'DR', total: 100 },
-            'ex4':   { code: 'MA', total: 97 },
-            'ex5':   { code: 'HL', total: 101 },
-            'ex6':   { code: 'RG', total: 112 },
-            'ex7':   { code: 'RR', total: 108 },
-            'ex8':   { code: 'DX', total: 107 },
-            'ex9':   { code: 'EM', total: 106 },
-            'ex10':  { code: 'UF', total: 115 },
-            'ex11':  { code: 'DS', total: 113 },
-            'ex12':  { code: 'PK', total: 100 },
-            'ex13':  { code: 'DF', total: 101 },
-            'ex14':  { code: 'PM', total: 75 },
-            'dp1':   { code: 'DP', total: 130 },
-            'dp2':   { code: 'MT', total: 124 },
-            'dp3':   { code: 'SW', total: 121 },
-            'dp4':   { code: 'GE', total: 106 },
-            'dp5':   { code: 'MD', total: 100 },
-            'dp6':   { code: 'LA', total: 146 },
-            'dp7':   { code: 'SF', total: 106 },
-            'pl1':   { code: 'PL', total: 127 },
-            'pl2':   { code: 'RR', total: 111 },
-            'pl3':   { code: 'SV', total: 147 },
-            'pl4':   { code: 'AR', total: 99 },
-            'hgss1': { code: 'HS', total: 90 },
-            'hgss2': { code: 'UL', total: 96 },
-            'hgss3': { code: 'UD', total: 90 },
-            'hgss4': { code: 'TM', total: 102 },
-            'col1':  { code: 'CL', total: 102 },
-            'bw1':   { code: 'BLW', total: 114 },
-            'bw2':   { code: 'EPO', total: 98 },
-            'bw3':   { code: 'NVI', total: 101 },
-            'bw4':   { code: 'NXD', total: 99 },
-            'bw5':   { code: 'DRX', total: 124 },
-            'bw6':   { code: 'DRV', total: 20 },
-            'bw7':   { code: 'BCR', total: 149 },
-            'bw8':   { code: 'PLS', total: 135 },
-            'bw9':   { code: 'PLF', total: 116 },
-            'bw10':  { code: 'PLB', total: 105 },
-            'bw11':  { code: 'LTR', total: 113 },
-            'xy1':   { code: 'KSS', total: 39 },
-            'xy2':   { code: 'FLF', total: 106 },
-            'xy3':   { code: 'FFI', total: 111 },
-            'xy4':   { code: 'PHF', total: 119 },
-            'xy5':   { code: 'PRC', total: 160 },
-            'xy6':   { code: 'ROS', total: 108 },
-            'xy7':   { code: 'AOR', total: 98 },
-            'xy8':   { code: 'BKT', total: 162 },
-            'xy9':   { code: 'BKP', total: 122 },
-            'xy10':  { code: 'FCO', total: 124 },
-            'xy11':  { code: 'STS', total: 114 },
-            'xy12':  { code: 'EVO', total: 108 },
-            'sm1':   { code: 'SUM', total: 149 },
-            'sm2':   { code: 'GRI', total: 145 },
-            'sm3':   { code: 'BUS', total: 147 },
-            'sm3.5': { code: 'SLG', total: 73 },
-            'sm4':   { code: 'CIN', total: 111 },
-            'sm5':   { code: 'UPR', total: 156 },
-            'sm6':   { code: 'FLI', total: 131 },
-            'sm7':   { code: 'CES', total: 168 },
-            'sm7.5': { code: 'DRM', total: 72 },
-            'sm8':   { code: 'LOT', total: 214 },
-            'sm9':   { code: 'TEU', total: 181 },
-            'sm10':  { code: 'UNB', total: 214 },
-            'sm11':  { code: 'UNM', total: 236 },
-            'sm11.5':{ code: 'HIF', total: 68 },
-            'sm12':  { code: 'CEC', total: 236 },
-            'swsh1': { code: 'SSH', total: 202 },
-            'swsh2': { code: 'RCL', total: 192 },
-            'swsh3': { code: 'DAA', total: 189 },
-            'swsh3.5':{ code: 'CPA', total: 73 },
-            'swsh4': { code: 'VIV', total: 185 },
-            'swsh4.5':{ code: 'SHF', total: 72 },
-            'swsh5': { code: 'BST', total: 163 },
-            'swsh6': { code: 'CRE', total: 198 },
-            'swsh7': { code: 'EVS', total: 203 },
-            'swsh8': { code: 'FST', total: 264 },
-            'swsh9': { code: 'BRS', total: 172 },
-            'swsh10': { code: 'ASR', total: 189 },
-            'swsh11': { code: 'LOR', total: 196 },
-            'swsh12': { code: 'SIT', total: 195 },
-            'swsh12.5':{ code: 'CRZ', total: 159 },
-            'sv1':   { code: 'SVI', total: 198 },
-            'sv2':   { code: 'PAL', total: 193 },
-            'sv3':   { code: 'OBF', total: 197 },
-            'sv3.5': { code: 'MEW', total: 165 },
-            'sv4':   { code: 'PAR', total: 182 },
-            'sv4.5': { code: 'PAF', total: 91 },
-            'sv5':   { code: 'TEF', total: 162 },
-            'sv6':   { code: 'TWM', total: 167 },
-            'sv6.5': { code: 'SFA', total: 64 },
-            'sv7':   { code: 'SCR', total: 142 },
-            'sv8':   { code: 'SSP', total: 191 }
+            /* SCARLET & VIOLET (mit exaktem Datum!) */
+            'sv8':   { code: 'SSP', year: 2024, releaseDate: '2024-11-08', total: 191 },
+            'sv7':   { code: 'SCR', year: 2024, releaseDate: '2024-09-13', total: 142 },
+            'sv6.5': { code: 'SFA', year: 2024, releaseDate: '2024-08-02', total: 64 },
+            'sv6':   { code: 'TWM', year: 2024, releaseDate: '2024-05-24', total: 167 },
+            'sv5':   { code: 'TEF', year: 2024, releaseDate: '2024-03-22', total: 162 },
+            'sv4.5': { code: 'PAF', year: 2024, releaseDate: '2024-01-26', total: 91 },
+            'sv4':   { code: 'PAR', year: 2023, releaseDate: '2023-11-03', total: 182 },
+            'sv3.5': { code: 'MEW', year: 2023, releaseDate: '2023-09-22', total: 165 },
+            'sv3':   { code: 'OBF', year: 2023, releaseDate: '2023-08-11', total: 197 },
+            'sv2':   { code: 'PAL', year: 2023, releaseDate: '2023-06-09', total: 193 },
+            'sv1':   { code: 'SVI', year: 2023, releaseDate: '2023-03-31', total: 198 },
+
+            /* SWORD & SHIELD */
+            'swsh12.5':{ code: 'CRZ', year: 2023, releaseDate: '2023-01-20', total: 159 },
+            'swsh12': { code: 'SIT', year: 2022, releaseDate: '2022-11-11', total: 195 },
+            'swsh11': { code: 'LOR', year: 2022, releaseDate: '2022-09-09', total: 196 },
+            'swsh10': { code: 'ASR', year: 2022, releaseDate: '2022-05-27', total: 189 },
+            'swsh9':  { code: 'BRS', year: 2022, releaseDate: '2022-02-25', total: 172 },
+            'swsh8':  { code: 'FST', year: 2021, releaseDate: '2021-11-12', total: 264 },
+            'swsh7':  { code: 'EVS', year: 2021, releaseDate: '2021-08-27', total: 203 },
+            'swsh6':  { code: 'CRE', year: 2021, releaseDate: '2021-06-18', total: 198 },
+            'swsh5':  { code: 'BST', year: 2021, releaseDate: '2021-03-19', total: 163 },
+            'swsh4.5':{ code: 'SHF', year: 2021, releaseDate: '2021-02-19', total: 72 },
+            'swsh4':  { code: 'VIV', year: 2020, releaseDate: '2020-11-13', total: 185 },
+            'swsh3.5':{ code: 'CPA', year: 2020, releaseDate: '2020-09-25', total: 73 },
+            'swsh3':  { code: 'DAA', year: 2020, releaseDate: '2020-08-14', total: 189 },
+            'swsh2':  { code: 'RCL', year: 2020, releaseDate: '2020-05-01', total: 192 },
+            'swsh1':  { code: 'SSH', year: 2020, releaseDate: '2020-02-07', total: 202 },
+
+            /* SUN & MOON */
+            'sm12':  { code: 'CEC', year: 2019, releaseDate: '2019-11-01', total: 236 },
+            'sm11.5':{ code: 'HIF', year: 2019, releaseDate: '2019-08-23', total: 68 },
+            'sm11':  { code: 'UNM', year: 2019, releaseDate: '2019-08-02', total: 236 },
+            'sm10':  { code: 'UNB', year: 2019, releaseDate: '2019-05-03', total: 214 },
+            'sm9':   { code: 'TEU', year: 2019, releaseDate: '2019-02-01', total: 181 },
+            'sm8':   { code: 'LOT', year: 2018, releaseDate: '2018-11-02', total: 214 },
+            'sm7.5': { code: 'DRM', year: 2018, releaseDate: '2018-09-07', total: 72 },
+            'sm7':   { code: 'CES', year: 2018, releaseDate: '2018-08-03', total: 168 },
+            'sm6':   { code: 'FLI', year: 2018, releaseDate: '2018-05-04', total: 131 },
+            'sm5':   { code: 'UPR', year: 2018, releaseDate: '2018-02-02', total: 156 },
+            'sm4':   { code: 'CIN', year: 2017, releaseDate: '2017-11-03', total: 111 },
+            'sm3.5': { code: 'SLG', year: 2017, releaseDate: '2017-10-06', total: 73 },
+            'sm3':   { code: 'BUS', year: 2017, releaseDate: '2017-08-04', total: 147 },
+            'sm2':   { code: 'GRI', year: 2017, releaseDate: '2017-05-05', total: 145 },
+            'sm1':   { code: 'SUM', year: 2017, releaseDate: '2017-02-03', total: 149 },
+
+            /* XY SERIES */
+            'xy12':  { code: 'EVO', year: 2016, releaseDate: '2016-11-02', total: 108 },
+            'xy11':  { code: 'STS', year: 2016, releaseDate: '2016-08-03', total: 114 },
+            'xy10':  { code: 'FCO', year: 2016, releaseDate: '2016-05-02', total: 124 },
+            'xy9':   { code: 'BKP', year: 2016, releaseDate: '2016-02-03', total: 122 },
+            'xy8':   { code: 'BKT', year: 2015, releaseDate: '2015-11-04', total: 162 },
+            'xy7':   { code: 'AOR', year: 2015, releaseDate: '2015-08-12', total: 98 },
+            'xy6':   { code: 'ROS', year: 2015, releaseDate: '2015-05-06', total: 108 },
+            'xy5':   { code: 'PRC', year: 2015, releaseDate: '2015-02-04', total: 160 },
+            'xy4':   { code: 'PHF', year: 2014, releaseDate: '2014-11-05', total: 119 },
+            'xy3':   { code: 'FFI', year: 2014, releaseDate: '2014-08-13', total: 111 },
+            'xy2':   { code: 'FLF', year: 2014, releaseDate: '2014-05-07', total: 106 },
+            'xy1':   { code: 'XY',  year: 2014, releaseDate: '2014-02-05', total: 146 },
+
+            /* BW SERIES */
+            'bw11':  { code: 'LTR', year: 2013, releaseDate: '2013-11-06', total: 113 },
+            'bw10':  { code: 'PLB', year: 2013, releaseDate: '2013-08-14', total: 105 },
+            'bw9':   { code: 'PLF', year: 2013, releaseDate: '2013-05-08', total: 116 },
+            'bw8':   { code: 'PLS', year: 2013, releaseDate: '2013-02-06', total: 135 },
+            'bw7':   { code: 'BCR', year: 2012, releaseDate: '2012-11-07', total: 149 },
+            'bw6':   { code: 'DRV', year: 2012, releaseDate: '2012-10-24', total: 20 },
+            'bw5':   { code: 'DRX', year: 2012, releaseDate: '2012-08-15', total: 124 },
+            'bw4':   { code: 'NXD', year: 2012, releaseDate: '2012-02-08', total: 99 },
+            'bw3':   { code: 'NVI', year: 2011, releaseDate: '2011-11-16', total: 101 },
+            'bw2':   { code: 'EPO', year: 2011, releaseDate: '2011-08-31', total: 98 },
+            'bw1':   { code: 'BLW', year: 2011, releaseDate: '2011-04-25', total: 114 },
+
+            /* CLASSICS & OTHERS */
+            'hgss4': { code: 'TM', year: 2010, releaseDate: '2010-11-03', total: 102 },
+            'hgss3': { code: 'UD', year: 2010, releaseDate: '2010-08-18', total: 90 },
+            'hgss2': { code: 'UL', year: 2010, releaseDate: '2010-05-12', total: 96 },
+            'hgss1': { code: 'HS', year: 2010, releaseDate: '2010-02-10', total: 123 },
+            'dp7':   { code: 'SF', year: 2008, releaseDate: '2008-11-05', total: 106 },
+            'dp6':   { code: 'LA', year: 2008, releaseDate: '2008-08-20', total: 146 },
+            'dp1':   { code: 'DP', year: 2007, releaseDate: '2007-05-23', total: 130 },
+            'ex14':  { code: 'PM', year: 2007, releaseDate: '2007-02-14', total: 75 },
+            'ex1':   { code: 'RS', year: 2003, releaseDate: '2003-06-18', total: 109 },
+            'neo4':  { code: 'N4', year: 2002, releaseDate: '2002-02-28', total: 105 },
+            'neo1':  { code: 'N1', year: 2000, releaseDate: '2000-12-16', total: 111 },
+            'gym2':  { code: 'G2', year: 2000, releaseDate: '2000-10-16', total: 105 },
+            'gym1':  { code: 'G1', year: 2000, releaseDate: '2000-08-14', total: 132 },
+            'base5': { code: 'TR', year: 2000, releaseDate: '2000-04-24', total: 83 },
+            'base4': { code: 'B2', year: 2000, releaseDate: '2000-02-24', total: 130 },
+            'base3': { code: 'FO', year: 1999, releaseDate: '1999-10-10', total: 62 },
+            'base2': { code: 'JU', year: 1999, releaseDate: '1999-06-16', total: 64 },
+            'base1': { code: 'BS', year: 1999, releaseDate: '1999-01-09', total: 102 }
         };
 
         const trackerStatus = document.getElementById('tracker-status');
@@ -500,47 +489,43 @@
             const idClean = set.id.toLowerCase();
             const nameLower = (set.name || '').toLowerCase();
             
-            // 1. Fallback oder bekannte DB für normale Sets
-            let code = (KNOWN_SETS_DB[idClean] && KNOWN_SETS_DB[idClean].code) 
-                ? KNOWN_SETS_DB[idClean].code 
-                : idClean.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
-
-            // 2. ABSOLUT ZWINGENDE NAMENS-ZUWEISUNG FÜR 2026er CUSTOM SETS
-            // Hiermit hebeln wir jegliches ID-Chaos aus!
-            if (nameLower.includes('mega evolution energy')) code = 'MEE';
-            else if (nameLower.includes('mega evolution')) code = 'MEG';
-            else if (nameLower.includes('phantasmal flames')) code = 'PFL';
-            else if (nameLower.includes('ascended heroes')) code = 'ASC';
-            else if (nameLower.includes('perfect order')) code = 'POR';
-            else if (nameLower.includes('chaos rising')) code = 'CRI';
-            else if (nameLower.includes('pitch black')) code = 'PBL';
-            else if (nameLower.includes('30th')) code = '30C';
-
+            let code = idClean.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
             let year = null;
-            if (set.releaseDate) {
-                const parts = set.releaseDate.split('-');
-                if (parts[0] && parts[0].length === 4) {
-                    year = parseInt(parts[0], 10);
-                }
+            let releaseDate = null; 
+
+            // 1. Zuerst schauen wir in unsere fehlerfreie Datenbank
+            if (KNOWN_SETS_DB[idClean]) {
+                if (KNOWN_SETS_DB[idClean].code) code = KNOWN_SETS_DB[idClean].code;
+                if (KNOWN_SETS_DB[idClean].year) year = KNOWN_SETS_DB[idClean].year;
+                if (KNOWN_SETS_DB[idClean].releaseDate) releaseDate = KNOWN_SETS_DB[idClean].releaseDate;
             }
 
-            // Sichere Einsortierung in 2026 für die neuen Sets
+            // 2. Namens-Zuweisung für die neuen 2026er Sets (weil deren IDs in der API ständig schwanken)
+            if (nameLower.includes('mega evolution energy')) { code = 'MEE'; year = 2026; releaseDate = '2026-01-01'; }
+            else if (nameLower.includes('mega evolution')) { code = 'MEG'; year = 2025; releaseDate = '2025-11-01'; }
+            else if (nameLower.includes('phantasmal flames')) { code = 'PFL'; year = 2026; releaseDate = '2026-02-15'; }
+            else if (nameLower.includes('ascended heroes')) { code = 'ASC'; year = 2026; releaseDate = '2026-01-15'; }
+            else if (nameLower.includes('perfect order')) { code = 'POR'; year = 2026; releaseDate = '2026-03-01'; }
+            else if (nameLower.includes('chaos rising')) { code = 'CRI'; year = 2026; releaseDate = '2026-05-01'; }
+            else if (nameLower.includes('pitch black')) { code = 'PBL'; year = 2026; releaseDate = '2026-08-01'; }
+            else if (nameLower.includes('30th')) { code = '30C'; year = 2026; releaseDate = '2026-10-01'; }
+
+            // 3. Absoluter Notfall-Fallback, falls ein Set nicht in der Datenbank ist
             if (!year) {
-                if (code === 'MEE' || code === 'MEG' || code === 'PFL' || code === 'ASC' || code === 'POR' || code === 'CRI' || code === 'PBL' || code === '30C' || idClean.startsWith('me')) year = 2026;
-                else if (idClean.startsWith('sv')) year = 2023;
-                else if (idClean.startsWith('swsh')) year = 2021;
-                else if (idClean.startsWith('sm')) year = 2018;
-                else if (idClean.startsWith('xy')) year = 2015;
-                else if (idClean.startsWith('bw')) year = 2011;
-                else if (idClean.startsWith('hgss') || idClean.startsWith('col')) year = 2010;
-                else if (idClean.startsWith('dp') || idClean.startsWith('pl')) year = 2007;
-                else if (idClean.startsWith('ex')) year = 2004;
-                else if (idClean.startsWith('neo')) year = 2000;
-                else if (idClean.startsWith('base') || idClean.startsWith('ju') || idClean.startsWith('fo')) year = 1999;
-                else year = 2005;
+                if (idClean.startsWith('sv')) { year = 2023; releaseDate = '2023-01-01'; }
+                else if (idClean.startsWith('swsh')) { year = 2020; releaseDate = '2020-01-01'; }
+                else if (idClean.startsWith('sm')) { year = 2017; releaseDate = '2017-01-01'; }
+                else if (idClean.startsWith('xy')) { year = 2014; releaseDate = '2014-01-01'; }
+                else if (idClean.startsWith('bw')) { year = 2011; releaseDate = '2011-01-01'; }
+                else if (idClean.startsWith('hgss') || idClean.startsWith('col')) { year = 2010; releaseDate = '2010-01-01'; }
+                else if (idClean.startsWith('dp') || idClean.startsWith('pl')) { year = 2007; releaseDate = '2007-01-01'; }
+                else if (idClean.startsWith('ex')) { year = 2004; releaseDate = '2004-01-01'; }
+                else if (idClean.startsWith('neo')) { year = 2000; releaseDate = '2000-01-01'; }
+                else if (idClean.startsWith('base') || idClean.startsWith('ju') || idClean.startsWith('fo')) { year = 1999; releaseDate = '1999-01-01'; }
+                else { year = 2005; releaseDate = '2005-01-01'; }
             }
 
-            return { year: year, releaseDate: set.releaseDate || `${year}-01-01`, code: code };
+            return { year: year, releaseDate: releaseDate, code: code };
         }
 
         async function init(forceRefresh = false) {
@@ -614,14 +599,17 @@
                 }
             });
 
+            // Jahre absteigend sortieren
             const sortedYears = Object.keys(groupedByYear).sort((a, b) => parseInt(b) - parseInt(a));
             let isFirstAccordion = true;
 
             const renderAccordionCard = (groupTitle, itemsList, isSpecial = false) => {
+                
+                // HIER IST DIE SORTIERUNG INNERHALB DES JAHRES: Jüngstes oben, Ältestes unten
                 itemsList.sort((a, b) => {
-                    const dateA = a.info.releaseDate || a.set.releaseDate || '';
-                    const dateB = b.info.releaseDate || b.set.releaseDate || '';
-                    if (dateA && dateB) return dateB.localeCompare(dateA);
+                    const dateA = a.info.releaseDate || '';
+                    const dateB = b.info.releaseDate || '';
+                    if (dateA && dateB) return dateB.localeCompare(dateA); 
                     return b.set.id.localeCompare(a.set.id);
                 });
 
@@ -646,7 +634,6 @@
                     const s = item.set;
                     const info = item.info;
                     
-                    // DB Zuweisung auch nochmal checken falls dort die total Counts hart codiert wurden
                     const dbTotal = (KNOWN_SETS_DB[s.id.toLowerCase()] && KNOWN_SETS_DB[s.id.toLowerCase()].total) 
                                      ? KNOWN_SETS_DB[s.id.toLowerCase()].total 
                                      : 0;

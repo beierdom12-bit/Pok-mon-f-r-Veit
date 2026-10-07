@@ -170,8 +170,8 @@
         }
 
         .set-badge-symbol-img { 
-            max-width: 80%; 
-            max-height: 80%; 
+            max-width: 82%; 
+            max-height: 82%; 
             object-fit: contain; 
         }
 
@@ -365,10 +365,10 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
-        /* SETS DIE EXPLIZIT KEIN GRAFIK-SYMBOL HABEN (z. B. 151, PROMO-SETS) */
-        const TEXT_ONLY_SETS = ['sv03.5', 'mew', '151', 'swsh07.5', 'cel25', 'promos', 'smp', 'dpp', 'bwp', 'xyp'];
+        /* SETS DIE EXPLIZIT KEIN GRAFIK-SYMBOL HABEN */
+        const TEXT_ONLY_SETS = ['sv03.5', 'mew', '151', 'swsh07.5', 'cel25', 'promos', 'smp', 'dpp', 'bwp', 'xyp', 'misc', 'wp', 'jumb'];
 
-        /* ENGLISCHE UND DEUTSCHE NAMEN FÜR GEPLANTE / ZUKÜNFTIGE SETS */
+        /* PRÄZISE MAP VON SET-IDS ZU BEKANNTEN DEUTSCHEN METADATEN UND JAHREN */
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
             'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', nameEn: 'Pitch Black', nameDe: 'Dunkelnacht', total: 180 },
@@ -399,6 +399,12 @@
             'swsh09': { year: 2022, releaseDate: '2022-02-25', code: 'BRS', nameEn: 'Brilliant Stars', nameDe: 'Strahlende Sterne', total: 216 },
             'swsh08': { year: 2021, releaseDate: '2021-11-12', code: 'FST', nameEn: 'Fusion Strike', nameDe: 'Fusionsangriff', total: 284 },
             'swsh07': { year: 2021, releaseDate: '2021-08-27', code: 'EVS', nameEn: 'Evolving Skies', nameDe: 'Drachenwandel', total: 237 },
+            'neo1': { year: 2000, releaseDate: '2000-12-16', code: 'NEO1', nameEn: 'Neo Genesis', nameDe: 'Neo Genesis', total: 111 },
+            'neo2': { year: 2001, releaseDate: '2001-06-01', code: 'NEO2', nameEn: 'Neo Discovery', nameDe: 'Neo Entdeckung', total: 75 },
+            'neo3': { year: 2001, releaseDate: '2001-09-21', code: 'NEO3', nameEn: 'Neo Revelation', nameDe: 'Neo Revelation', total: 64 },
+            'neo4': { year: 2002, releaseDate: '2002-02-27', code: 'NEO4', nameEn: 'Neo Destiny', nameDe: 'Neo Destiny', total: 105 },
+            'gym1': { year: 2000, releaseDate: '2000-08-14', code: 'GYM1', nameEn: 'Gym Heroes', nameDe: 'Gym Heroes', total: 132 },
+            'gym2': { year: 2000, releaseDate: '2000-10-16', code: 'GYM2', nameEn: 'Gym Challenge', nameDe: 'Gym Challenge', total: 132 },
             'tr': { year: 2000, releaseDate: '2000-04-24', code: 'TR', nameEn: 'Team Rocket', nameDe: 'Team Rocket', total: 83 },
             'ju': { year: 1999, releaseDate: '1999-06-16', code: 'JU', nameEn: 'Jungle', nameDe: 'Dschungel', total: 64 },
             'base1': { year: 1999, releaseDate: '1999-01-09', code: 'BS', nameEn: 'Base Set', nameDe: 'Grundset', total: 102 }
@@ -428,7 +434,7 @@
                 return ''; 
             }
             if (setObj && setObj.symbol) {
-                return setObj.symbol.startsWith('http') ? `${setObj.symbol}.png` : setObj.symbol;
+                return setObj.symbol.endsWith('.png') ? setObj.symbol : `${setObj.symbol}.png`;
             }
             return `https://assets.tcgdex.net/en/${setId}/symbol.png`;
         }
@@ -448,7 +454,6 @@
             try {
                 let fetchedSets = [];
                 try {
-                    // RUFE ENGLISCHE SET-LISTE FÜR PERFEKTE MATCHE UND SYMBOLE AB
                     const resSets = await fetch(`${API_BASE_EN}/sets`);
                     if (resSets.ok) fetchedSets = await resSets.json();
                 } catch (apiErr) {}
@@ -474,16 +479,29 @@
         function getSetYearAndCode(set) {
             const idClean = set.id.toLowerCase();
             if (KNOWN_SETS_DB[idClean]) return KNOWN_SETS_DB[idClean];
+
             let year = 2024;
-            if (idClean.startsWith('me')) year = 2026;
-            else if (idClean.startsWith('sv')) year = 2024;
-            else if (idClean.startsWith('swsh')) year = 2021;
-            else if (idClean.startsWith('sm')) year = 2018;
-            else if (idClean.startsWith('xy')) year = 2015;
-            else if (idClean.startsWith('base')) year = 1999;
+            if (set.releaseDate) {
+                const parts = set.releaseDate.split('-');
+                if (parts[0] && parts[0].length === 4) {
+                    year = parseInt(parts[0], 10);
+                }
+            } else {
+                if (idClean.startsWith('me')) year = 2026;
+                else if (idClean.startsWith('sv')) year = 2024;
+                else if (idClean.startsWith('swsh')) year = 2021;
+                else if (idClean.startsWith('sm')) year = 2018;
+                else if (idClean.startsWith('xy')) year = 2015;
+                else if (idClean.startsWith('bw')) year = 2011;
+                else if (idClean.startsWith('hgss') || idClean.startsWith('col')) year = 2010;
+                else if (idClean.startsWith('dp') || idClean.startsWith('pl')) year = 2007;
+                else if (idClean.startsWith('ex')) year = 2004;
+                else if (idClean.startsWith('neo')) year = 2000;
+                else if (idClean.startsWith('base') || idClean.startsWith('ju') || idClean.startsWith('fo')) year = 1999;
+            }
 
             let code = idClean.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
-            return { year: year, releaseDate: set.releaseDate || '2024-01-01', code: code, nameEn: set.name, nameDe: set.name };
+            return { year: year, releaseDate: set.releaseDate || `${year}-01-01`, code: code, nameEn: set.name, nameDe: set.name };
         }
 
         function renderYearAccordion(searchFilter = '') {
@@ -617,20 +635,20 @@
             try {
                 let setData = null;
                 try {
-                    // KARTEN UND BANNER-LOGO BLEIBEN AUF DEUTSCH!
+                    // DEUTSCHE KARTENDATEN LADEN
                     const res = await fetch(`${API_BASE_DE}/sets/${setId}`);
                     if (res.ok) setData = await res.json();
                 } catch (e) {}
 
                 if (!setData || !setData.cards || setData.cards.length === 0) {
-                    // FALLBACK: ENGLISCH LANDEN FALLS KEINE DEUTSCHEN DATEN GEFUNDEN WURDEN
+                    // FALLBACK: ENGLISCH FALLS FÜR DAS SET KEINE DEUTSCHEN TRANSLATIONEN VORHANDEN SIND
                     const resEn = await fetch(`${API_BASE_EN}/sets/${setId}`);
                     if (resEn.ok) setData = await resEn.json();
                 }
 
                 if (setData) {
                     currentSetName = setData.name || 'Pokémon Set';
-                    currentSetLogo = setData.logo ? `${setData.logo}.png` : '';
+                    currentSetLogo = setData.logo ? (setData.logo.endsWith('.png') ? setData.logo : `${setData.logo}.png`) : '';
                     currentCards = setData.cards || [];
                 }
 

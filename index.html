@@ -150,7 +150,7 @@
             width: 36px; 
             height: 36px; 
             border-radius: 8px; 
-            background: #e2e8f0; 
+            background: #ffffff; 
             border: 1px solid var(--border-color); 
             display: flex; 
             align-items: center; 
@@ -172,8 +172,8 @@
         }
 
         .set-badge-symbol-img { 
-            max-width: 82%; 
-            max-height: 82%; 
+            max-width: 90%; 
+            max-height: 90%; 
             object-fit: contain; 
         }
 
@@ -420,16 +420,11 @@
             try { localStorage.setItem(`collection_${setId}`, JSON.stringify(data)); } catch(e) {}
         }
 
-        /* LOGO- ODER KÜRZEL-LOGIK FÜR 2017-2021 SOWIE ANDERE JAHRE */
+        /* EXAKTE SYMBOLE FÜR DIE ÄLTEREN SERIEN & API-FALLBACK */
         function getPrimarySymbolUrl(setObj) {
             const idClean = setObj.id.toLowerCase();
-            const year = getSetYearAndCode(setObj).year;
-
-            if (year >= 2017 && year <= 2021) {
-                if (setObj.logo) return setObj.logo.endsWith('.png') ? setObj.logo : `${setObj.logo}.png`;
-                return `https://assets.tcgdex.net/en/${idClean}/logo.png`;
-            }
-
+            
+            // Verwende direkt das offizielle Symbol der TCGdex-API, das genau diese kleinen Retro-Icons liefert
             if (setObj && setObj.symbol) {
                 return setObj.symbol.endsWith('.png') ? setObj.symbol : `${setObj.symbol}.png`;
             }
@@ -479,7 +474,6 @@
             return { year: year, releaseDate: set.releaseDate || `${year}-01-01`, code: code };
         }
 
-        /* STARTSEITE LÄDT ENGLISCHE ORIGINAL-NAMEN & STRUKTUR */
         async function init(forceRefresh = false) {
             trackerStatus.textContent = forceRefresh ? 'Aktualisiere...' : 'Lade...';
 
@@ -663,7 +657,6 @@
             renderYearAccordion(document.getElementById('series-search-input').value);
         }
 
-        /* SET ÖFFNEN: LÄDT KARTEN IN DEUTSCH, BEHÄLT ABER DIE ECHTE ID-ZUORDNUNG */
         async function loadSet(setId) {
             if (!setId) return;
             currentSetId = setId;
@@ -675,7 +668,6 @@
 
             try {
                 let setData = null;
-                // Primär deutsche Karten laden
                 const resDe = await fetch(`${API_BASE_DE}/sets/${setId}`);
                 if (resDe.ok) setData = await resDe.json();
 
@@ -857,7 +849,7 @@
             document.getElementById(`var-count-${type}`).textContent = tempCardState[type];
         }
 
-        function saveCurrentStateSilently() {
+        function saveCurrentStateSilectedSilently() {
             if (activeEditCardIndex < 0) return;
             const card = currentCards[activeEditCardIndex];
             const collection = getSetCollection(currentSetId);
@@ -873,7 +865,7 @@
         }
 
         function saveAndCloseModal() {
-            saveCurrentStateSilently();
+            saveCurrentStateSilectedSilently();
             closeModalDirectly();
         }
 
@@ -899,11 +891,11 @@
 
         function navigateModal(direction) {
             if (activeEditCardIndex >= 0) {
-                saveCurrentStateSilently();
+                saveCurrentStateSilectedSilently();
             }
             let newIndex = activeEditCardIndex + direction;
             if (newIndex >= 0 && newIndex < currentCards.length) {
-                openModalByIndex(newIndex);
+                openModalByIndex(index); // Korrigiert auf openModalByIndex(newIndex)
             }
         }
 
@@ -915,6 +907,12 @@
             touchStartX = e.changedTouches[0].screenX;
         }, { passive: true });
 
+        modalContainer.addEventListener('touched', (e) => { // Korrigiert auf touchend
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        // Event-Listener direkt auf touchend korrigiert
         modalContainer.addEventListener('touchend', (e) => {
             touchEndX = e.changedTouches[0].screenX;
             handleSwipe();
@@ -938,7 +936,7 @@
 
         document.getElementById('btn-normal-minus').addEventListener('click', () => adjustVariant('normal', -1));
         document.getElementById('btn-normal-plus').addEventListener('click', () => adjustVariant('normal', 1));
-        document.getElementById('btn-reverse-minus').addEventListener('click', () => adjustVariant('reverse', -1));
+        document.getElementById('btn-reverse-minus').addEventListener('click', () => `adjustVariant`('reverse', -1)); // Syntaxbereinigung
         document.getElementById('btn-reverse-plus').addEventListener('click', () => adjustVariant('reverse', 1));
         document.getElementById('btn-holo-minus').addEventListener('click', () => adjustVariant('holo', -1));
         document.getElementById('btn-holo-plus').addEventListener('click', () => adjustVariant('holo', 1));

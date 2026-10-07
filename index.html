@@ -275,7 +275,7 @@
         <div id="main-overview-section">
             <div class="search-box-wrapper">
                 <span class="search-icon">🔍</span>
-                <input type="text" id="series-search-input" class="search-input" placeholder="Serie, Set oder Kürzel suchen (z. B. Silver Tempest, POP, MCD)...">
+                <input type="text" id="series-search-input" class="search-input" placeholder="Serie, Set oder Kürzel suchen (z. B. Silver Tempest, POP, Rumble)...">
             </div>
 
             <div class="nav-modules-grid">
@@ -366,9 +366,9 @@
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
         /* SETS DIE EXPLIZIT KEIN GRAFIK-SYMBOL HABEN */
-        const TEXT_ONLY_SETS = ['sv03.5', 'mew', '151', 'swsh07.5', 'cel25', 'promos', 'smp', 'dpp', 'bwp', 'xyp', 'misc', 'wp', 'jumb', 'tk'];
+        const TEXT_ONLY_SETS = ['sv03.5', 'mew', '151', 'swsh07.5', 'cel25', 'promos', 'smp', 'dpp', 'bwp', 'xyp', 'misc', 'wp', 'jumb', 'tk', 'ru1', 'rumble'];
 
-        /* METADATEN ZU BEKANNTEN SETS UND SONDERSERIEN */
+        /* METADATEN ZU BEKANNTEN SETS UND EXAKTEN RELEASE-DATEDATES */
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
             'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', nameEn: 'Pitch Black', nameDe: 'Dunkelnacht', total: 180 },
@@ -381,12 +381,19 @@
             'sv10': { year: 2025, releaseDate: '2025-05-20', code: 'DRI', nameEn: 'Destined Rivals', nameDe: 'Destined Rivals', total: 180 },
             'sv09': { year: 2025, releaseDate: '2025-03-28', code: 'JTG', nameEn: 'Journey Together', nameDe: 'Journey Together', total: 190 },
             'sv08.5': { year: 2025, releaseDate: '2025-01-17', code: 'PRE', nameEn: 'Prismatic Evolutions', nameDe: 'Prismatische Entwicklungen', total: 175 },
+            
+            /* EXAKTE HAUPTSETS 2024 */
             'sv08': { year: 2024, releaseDate: '2024-11-08', code: 'SSP', nameEn: 'Surging Sparks', nameDe: 'Stürmische Funken', total: 250 },
             'sv07': { year: 2024, releaseDate: '2024-09-13', code: 'SCR', nameEn: 'Stellar Crown', nameDe: 'Stellarkrone', total: 170 },
             'sv06.5': { year: 2024, releaseDate: '2024-08-02', code: 'SFA', nameEn: 'Shrouded Fable', nameDe: 'Nebel der Sagen', total: 95 },
             'sv06': { year: 2024, releaseDate: '2024-05-24', code: 'TWM', nameEn: 'Twilight Masquerade', nameDe: 'Maskerade von Zwielicht', total: 220 },
             'sv05': { year: 2024, releaseDate: '2024-03-22', code: 'TEF', nameEn: 'Temporal Forces', nameDe: 'Gewalten der Zeit', total: 218 },
             'sv04.5': { year: 2024, releaseDate: '2024-01-26', code: 'PAF', nameEn: 'Paldean Fates', nameDe: 'Paldeas Schicksale', total: 240 },
+            
+            /* KORREKTES JAHR FÜR POKÉMON RUMBLE */
+            'ru1': { year: 2009, releaseDate: '2009-12-02', code: 'RUM', nameEn: 'Pokémon Rumble', nameDe: 'Pokémon Rumble', total: 16 },
+            'rumble': { year: 2009, releaseDate: '2009-12-02', code: 'RUM', nameEn: 'Pokémon Rumble', nameDe: 'Pokémon Rumble', total: 16 },
+
             'sv04': { year: 2023, releaseDate: '2023-11-03', code: 'PAR', nameEn: 'Paradox Rift', nameDe: 'Paradoxrift', total: 260 },
             'sv03.5': { year: 2023, releaseDate: '2023-09-22', code: 'MEW', nameEn: '151', nameDe: '151', total: 207 },
             'sv03': { year: 2023, releaseDate: '2023-08-11', code: 'OBF', nameEn: 'Obsidian Flames', nameDe: 'Obsidianflammen', total: 230 },
@@ -476,7 +483,6 @@
             }
         }
 
-        /* ERKENNT OB EIN SET ZU EINER SPEZIELLEN KATEGORIE GEHÖRT */
         function getSpecialCategoryKey(setId, setName) {
             const id = setId.toLowerCase();
             const name = (setName || '').toLowerCase();
@@ -486,22 +492,24 @@
             if (id.startsWith('tk') || name.includes('trainer kit') || name.includes('battle deck')) return 'trainerkits';
             if (id.includes('promo') || id.includes('jumb') || id === 'misc' || id === 'wp' || id === 'si1' || name.includes('promo') || name.includes('jumbo') || name.includes('southern islands')) return 'promos';
             
-            return null; // Reguläres Set
+            return null;
         }
 
         function getSetYearAndCode(set) {
             const idClean = set.id.toLowerCase();
             if (KNOWN_SETS_DB[idClean]) return KNOWN_SETS_DB[idClean];
 
-            let year = 2024;
+            let year = null;
             if (set.releaseDate) {
                 const parts = set.releaseDate.split('-');
                 if (parts[0] && parts[0].length === 4) {
                     year = parseInt(parts[0], 10);
                 }
-            } else {
+            }
+
+            if (!year) {
                 if (idClean.startsWith('me')) year = 2026;
-                else if (idClean.startsWith('sv')) year = 2024;
+                else if (idClean.startsWith('sv')) year = 2023;
                 else if (idClean.startsWith('swsh')) year = 2021;
                 else if (idClean.startsWith('sm')) year = 2018;
                 else if (idClean.startsWith('xy')) year = 2015;
@@ -511,6 +519,7 @@
                 else if (idClean.startsWith('ex')) year = 2004;
                 else if (idClean.startsWith('neo')) year = 2000;
                 else if (idClean.startsWith('base') || idClean.startsWith('ju') || idClean.startsWith('fo')) year = 1999;
+                else year = 2005; // Fallback für unbekannte Mini-Sets
             }
 
             let code = idClean.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
@@ -550,13 +559,10 @@
                 }
             });
 
-            // 1. REGULÄRE JAHRES-REITER GENERIEREN (ABSTEIGEND NACH JAHR)
             const sortedYears = Object.keys(groupedByYear).sort((a, b) => parseInt(b) - parseInt(a));
-            
             let isFirstAccordion = true;
 
             const renderAccordionCard = (groupTitle, itemsList, isSpecial = false) => {
-                // INNEN NACH RELEASE-DATUM SORTIEREN (NEUESTE OBEN)
                 itemsList.sort((a, b) => {
                     const dateA = a.info.releaseDate || a.set.releaseDate || '';
                     const dateB = b.info.releaseDate || b.set.releaseDate || '';
@@ -636,14 +642,12 @@
                 isFirstAccordion = false;
             };
 
-            // RENDER JAHRES-REITER
             sortedYears.forEach(year => {
                 if (groupedByYear[year].length > 0) {
                     renderAccordionCard(`📅 Jahr ${year}`, groupedByYear[year], false);
                 }
             });
 
-            // 2. SPEZIAL-REITER GANZ UNTEN ANFÜGEN
             Object.keys(specialGroups).forEach(key => {
                 const grp = specialGroups[key];
                 if (grp.sets.length > 0) {

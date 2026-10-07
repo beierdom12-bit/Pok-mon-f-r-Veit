@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pokémon Platzhalter Generator</title>
+    <!-- jsPDF für die saubere clientseitige PDF-Generierung -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #090d16;
+            --surface-color: rgba(21, 29, 46, 0.7);
+            --surface-card: #151d2e;
+            --primary-color: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.4);
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --warning-color: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background-color: var(--bg-color); 
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #090d16 70%);
+            color: var(--text-main); 
+            padding: 16px 12px 32px 12px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .main-container { 
+            width: 100%; 
+            max-width: 900px;
+            background: var(--surface-color); 
+            backdrop-filter: blur(12px);
+            border-radius: 16px; 
+            padding: 18px; 
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); 
+            border: 1px solid var(--border-color); 
+        }
+
+        .header-title { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            margin-bottom: 16px; 
+            border-bottom: 1px solid var(--border-color); 
+            padding-bottom: 12px; 
+            flex-wrap: wrap;
+        }
+        .header-title h1 { 
+            font-size: 1.25rem; 
+            color: var(--text-main); 
+            flex-grow: 1; 
+            font-weight: 800; 
+            letter-spacing: -0.3px; 
+        }
+
+        .btn { 
+            padding: 10px 16px; 
+            border: none; 
+            border-radius: 10px; 
+            font-weight: 700; 
+            font-size: 0.82rem; 
+            cursor: pointer; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 6px; 
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            text-decoration: none;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-outline { background: var(--surface-card); border: 1px solid var(--border-color); color: var(--text-main); }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; width: 100%; }
+        .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; width: 100%; margin-top: 16px; font-size: 1rem; padding: 14px; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+        .form-select, .form-input { 
+            width: 100%; 
+            padding: 12px 16px; 
+            background: var(--surface-card); 
+            border: 1px solid var(--border-color); 
+            border-radius: 12px; 
+            color: var(--text-main); 
+            font-size: 0.9rem; 
+            outline: none;
+        }
+        .form-select:focus, .form-input:focus { border-color: var(--primary-color); }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 0.82rem;
+            color: #93c5fd;
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="header-title">
+            <h1>📄 Platzhalter PDF Generator</h1>
+            <a href="index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">◄ Zurück</a>
+        </div>
+
+        <div class="info-box">
+            Wähle ein Set aus, für das dir noch Karten in deiner Sammlung fehlen. Der Generator erstellt dir ein sauberes PDF im DIN-A4-Format mit exakten Kartengrößen (63x88mm) zum Ausschneiden und Einstecken in den Ordner.
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Pokémon Set auswählen</label>
+            <select id="set-select" class="form-select">
+                <option value="">Lade Sets...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Modus</label>
+            <select id="mode-select" class="form-select">
+                <option value="missing">Nur fehlende Karten generieren</option>
+                <option value="all">Komplettes Set generieren</option>
+            </select>
+        </div>
+
+        <button class="btn btn-success" id="btn-generate-pdf">🖨️ PDF Platzhalter erstellen</button>
+    </div>
+
+    <script>
+        const API_BASE_EN = 'https://api.tcgdex.net/v2/en';
+        const API_BASE_DE = 'https://api.tcgdex.net/v2/de';
+        let allSetsData = [];
+
+        async function initSelector() {
+            const selectEl = document.getElementById('set-select');
+            try {
+                let res = await fetch(`${API_BASE_DE}/sets`);
+                if (!res.ok) res = await fetch(`${API_BASE_EN}/sets`);
+                if (res.ok) {
+                    allSetsData = await res.json();
+                    allSetsData.sort((a, b) => b.id.localeCompare(a.id));
+                    
+                    selectEl.innerHTML = '<option value="">-- Bitte Set wählen --</option>';
+                    allSetsData.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = `${s.name} (${s.cardCount.total} Karten)`;
+                        selectEl.appendChild(opt);
+                    });
+                }
+            } catch(e) {
+                selectEl.innerHTML = '<option value="">Fehler beim Laden der Sets</option>';
+            }
+        }
+
+        function getSetCollection(setId) {
+            try {
+                const data = localStorage.getItem(`collection_${setId}`);
+                return data ? JSON.parse(data) : {};
+            } catch(e) { return {}; }
+        }
+
+        document.getElementById('btn-generate-pdf').addEventListener('click', async () => {
+            const setId = document.getElementById('set-select').value;
+            const mode = document.getElementById('mode-select').value;
+            if (!setId) {
+                alert('Bitte wähle zuerst ein Set aus.');
+                return;
+            }
+
+            alert('Lade Kartendaten für das PDF...');
+
+            try {
+                let setData = null;
+                let res = await fetch(`${API_BASE_DE}/sets/${setId}`);
+                if (res.ok) setData = await res.json();
+                if (!setData || !setData.cards) {
+                    res = await fetch(`${API_BASE_EN}/sets/${setId}`);
+                    if (res.ok) setData = await res.json();
+                }
+
+                if (!setData || !setData.cards) {
+                    alert('Konnte Kartendaten nicht laden.');
+                    return;
+                }
+
+                const cards = setData.cards;
+                const collection = getSetCollection(setId);
+                let targetCards = [];
+
+                if (mode === 'missing') {
+                    cards.forEach(c => {
+                        const cardData = collection[c.id];
+                        const totalOwned = cardData ? ((cardData.normal || 0) + (cardData.reverse || 0) + (cardData.holo || 0)) : 0;
+                        if (totalOwned === 0) {
+                            targetCards.push(c);
+                        }
+                    });
+                } else {
+                    targetCards = cards;
+                }
+
+                if (targetCards.length === 0) {
+                    alert('Keine Karten für den Export gefunden (Set ist entweder komplettvoll oder leer).');
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+
+                // DIN A4 Maße: 210 x 297 mm
+                const cardWidth = 63;
+                const cardHeight = 88;
+                const cols = 3;
+                const rows = 3;
+                const marginLeft = 10.5;
+                const marginTop = 12.5;
+                const gapX = 3;
+                const gapY = 3;
+
+                let cardIndexOnPage = 0;
+
+                targetCards.forEach((c, idx) => {
+                    if (cardIndexOnPage > 0 && cardIndexOnPage % (cols * rows) === 0) {
+                        doc.addPage();
+                        cardIndexOnPage = 0;
+                    }
+
+                    const col = cardIndexOnPage % cols;
+                    const row = Math.floor(cardIndexOnPage / cols);
+
+                    const x = marginLeft + col * (cardWidth + gapX);
+                    const y = marginTop + row * (cardHeight + gapY);
+
+                    // Äußerer Rahmen (Schnittkante)
+                    doc.setDrawColor(180, 180, 180);
+                    doc.setLineWidth(0.2);
+                    doc.rect(x, y, cardWidth, cardHeight);
+
+                    // Kartennummer & Name im Platzhalter
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(10);
+                    doc.setTextColor(50, 50, 50);
+                    doc.text(`#${c.localId}`, x + 5, y + 8);
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(8);
+                    const splitName = doc.splitTextToSize(c.name, cardWidth - 10);
+                    doc.text(splitName, x + 5, y + 14);
+
+                    cardIndexOnPage++;
+                });
+
+                doc.save(`Platzhalter_${setId}_${mode}.pdf`);
+            } catch(e) {
+                alert('Fehler beim Generieren des PDFs.');
+            }
+        });
+
+        initSelector();
+    </script>
+</body>
+</html>

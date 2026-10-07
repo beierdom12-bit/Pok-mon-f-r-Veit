@@ -146,7 +146,6 @@
         .set-item-top { display: flex; justify-content: space-between; align-items: center; }
         .set-item-left { display: flex; align-items: center; gap: 12px; overflow: hidden; }
         
-        /* SCHWARZE GRAFIK-SYMBOLE */
         .set-badge-icon { 
             width: 36px; 
             height: 36px; 
@@ -162,7 +161,6 @@
             padding: 4px;
         }
 
-        /* TEXT-BADGE (DUNKEL) FÜR SETS OHNE SYMBOL */
         .set-badge-icon.text-only {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid var(--border-color);
@@ -369,20 +367,20 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
-        /* EXPLIZITE SETS OHNE GRAFIK-SYMBOL */
+        /* SETS OHNE BILD-SYMBOL */
         const TEXT_ONLY_SETS = [
             'sv03.5', 'mew', '151', 'swsh07.5', 'cel25', 'promos', 'smp', 'dpp', 'bwp', 'xyp', 
             'misc', 'wp', 'jumb', 'tk', 'me01', 'me02', 'me03', 'me04', 'me05', '30th', 'pfl', 'mee'
         ];
 
-        /* PREZISE LOOKUP-TABLE: KORRIGIERT UND ENTWIRRT DIE NAMEN & KÜRZEL DER TCGDEX-API */
+        /* EXAKTER SET-OVERRIDE FÜR DIE ID-ZUORDNUNG */
         const KNOWN_SETS_DB = {
             '30th': { year: 2026, releaseDate: '2026-10-01', code: '30C', nameEn: '30th Celebration', nameDe: '30 Jahre Collection', total: 100 },
             'me05': { year: 2026, releaseDate: '2026-08-01', code: 'PBL', nameEn: 'Pitch Black', nameDe: 'Dunkelnacht', total: 180 },
             'me04': { year: 2026, releaseDate: '2026-05-01', code: 'CRI', nameEn: 'Chaos Rising', nameDe: 'Wachsendes Chaos', total: 190 },
             'me03': { year: 2026, releaseDate: '2026-03-01', code: 'POR', nameEn: 'Perfect Order', nameDe: 'Optimale Ordnung', total: 175 },
-            'pfl':  { year: 2026, releaseDate: '2026-02-15', code: 'PFL', nameEn: 'Phantasmal Flames', nameDe: 'Phantasmal Flames', total: 180 },
-            'me02': { year: 2026, releaseDate: '2026-01-15', code: 'ASC', nameEn: 'Ascended Heroes', nameDe: 'Erhabene Helden', total: 210 },
+            'pfl':  { year: 2026, releaseDate: '2026-02-15', code: 'PFL', nameEn: 'Phantasmal Flames', nameDe: 'Phantasmal Flames', total: 94 },
+            'me02': { year: 2026, releaseDate: '2026-01-15', code: 'ASC', nameEn: 'Ascended Heroes', nameDe: 'Erhabene Helden', total: 217 },
             'mee':  { year: 2026, releaseDate: '2026-01-01', code: 'MEE', nameEn: 'Mega Evolution Energy', nameDe: 'Mega Evolution Energy', total: 16 },
             'me01': { year: 2025, releaseDate: '2025-11-01', code: 'MEG', nameEn: 'Mega Evolution', nameDe: 'Mega-Entwicklung', total: 200 },
             'sv10.5b': { year: 2025, releaseDate: '2025-08-15', code: 'BLK', nameEn: 'Black Bolt', nameDe: 'Black Bolt', total: 160 },
@@ -458,53 +456,24 @@
                    nameLower.includes('illustration rare') || nameLower.includes('ace spec');
         }
 
-        async function init(forceRefresh = false) {
-            trackerStatus.textContent = forceRefresh ? 'Aktualisiere...' : 'Lade...';
-
-            try {
-                let fetchedSets = [];
-                try {
-                    const resSets = await fetch(`${API_BASE_EN}/sets`);
-                    if (resSets.ok) fetchedSets = await resSets.json();
-                } catch (apiErr) {}
-
-                if (!fetchedSets || fetchedSets.length === 0) {
-                    allSetsData = Object.keys(KNOWN_SETS_DB).map(id => ({
-                        id: id, 
-                        name: KNOWN_SETS_DB[id].nameEn, 
-                        releaseDate: KNOWN_SETS_DB[id].releaseDate,
-                        cardCount: { official: KNOWN_SETS_DB[id].total, total: KNOWN_SETS_DB[id].total }
-                    }));
-                } else {
-                    allSetsData = fetchedSets.filter(s => s.cardCount && s.cardCount.total > 0);
-                }
-
-                renderYearAccordion();
-                trackerStatus.textContent = 'Bereit';
-            } catch (err) {
-                trackerStatus.textContent = 'Bereit (Offline)';
-            }
-        }
-
-        function getSpecialCategoryKey(setId, setName) {
-            const id = setId.toLowerCase();
-            const name = (setName || '').toLowerCase();
-
-            if (id.includes('mcd') || name.includes("mcdonald") || name.includes("mc donald")) return 'mcdonalds';
-            if (id.startsWith('pop') || name.startsWith('pop series')) return 'pop';
-            if (id.startsWith('tk') || name.includes('trainer kit') || name.includes('battle deck')) return 'trainerkits';
-            if (id.includes('promo') || id.includes('jumb') || id === 'misc' || id === 'wp' || id === 'si1' || name.includes('promo') || name.includes('jumbo') || name.includes('southern islands')) return 'promos';
-            
-            return null;
-        }
-
-        function getSetYearAndCode(set) {
+        /* SANIERUNG DER EMPFANGENEN SET-LISTE */
+        function sanitizeSetObject(set) {
             const idClean = set.id.toLowerCase();
+
+            // Spezial-Korrektur für die verdrehten TCGdex-API-Einträge
+            if (idClean === 'me02') {
+                set.name = 'Ascended Heroes';
+                return { year: 2026, releaseDate: '2026-01-15', code: 'ASC', nameEn: 'Ascended Heroes', nameDe: 'Erhabene Helden', total: 217 };
+            }
             
-            // EXAKTER OVERRIDE DURCH DIESE SCHLEIFE
+            if (idClean === 'me04' || idClean === 'pfl') {
+                set.name = 'Phantasmal Flames';
+                return { year: 2026, releaseDate: '2026-02-15', code: 'PFL', nameEn: 'Phantasmal Flames', nameDe: 'Phantasmal Flames', total: 94 };
+            }
+
             if (KNOWN_SETS_DB[idClean]) {
                 const dbInfo = KNOWN_SETS_DB[idClean];
-                set.name = dbInfo.nameEn; // Name überschreiben
+                set.name = dbInfo.nameEn;
                 return dbInfo;
             }
 
@@ -535,6 +504,59 @@
             return { year: year, releaseDate: set.releaseDate || `${year}-01-01`, code: code, nameEn: set.name, nameDe: set.name };
         }
 
+        async function init(forceRefresh = false) {
+            trackerStatus.textContent = forceRefresh ? 'Aktualisiere...' : 'Lade...';
+
+            try {
+                let fetchedSets = [];
+                try {
+                    const resSets = await fetch(`${API_BASE_EN}/sets`);
+                    if (resSets.ok) fetchedSets = await resSets.json();
+                } catch (apiErr) {}
+
+                if (!fetchedSets || fetchedSets.length === 0) {
+                    allSetsData = Object.keys(KNOWN_SETS_DB).map(id => ({
+                        id: id, 
+                        name: KNOWN_SETS_DB[id].nameEn, 
+                        releaseDate: KNOWN_SETS_DB[id].releaseDate,
+                        cardCount: { official: KNOWN_SETS_DB[id].total, total: KNOWN_SETS_DB[id].total }
+                    }));
+                } else {
+                    allSetsData = fetchedSets.filter(s => s.cardCount && s.cardCount.total > 0);
+                }
+
+                // Stellt sicher, dass gefundene Pflicht-Sets (wie Phantasmal Flames) nicht fehlen
+                const knownIdsPresent = new Set(allSetsData.map(s => s.id.toLowerCase()));
+                Object.keys(KNOWN_SETS_DB).forEach(key => {
+                    if (!knownIdsPresent.has(key)) {
+                        allSetsData.push({
+                            id: key,
+                            name: KNOWN_SETS_DB[key].nameEn,
+                            releaseDate: KNOWN_SETS_DB[key].releaseDate,
+                            cardCount: { official: KNOWN_SETS_DB[key].total, total: KNOWN_SETS_DB[key].total }
+                        });
+                    }
+                });
+
+                renderYearAccordion();
+                trackerStatus.textContent = 'Bereit';
+            } catch (err) {
+                trackerStatus.textContent = 'Bereit (Offline)';
+            }
+        }
+
+        function getSpecialCategoryKey(setId, setName) {
+            const id = setId.toLowerCase();
+            const name = (setName || '').toLowerCase();
+
+            if (id.includes('mcd') || name.includes("mcdonald") || name.includes("mc donald")) return 'mcdonalds';
+            if (id.startsWith('pop') || name.startsWith('pop series')) return 'pop';
+            if (id.startsWith('tk') || name.includes('trainer kit') || name.includes('battle deck')) return 'trainerkits';
+            if (id.includes('promo') || id.includes('jumb') || id === 'misc' || id === 'wp' || id === 'si1' || name.includes('promo') || name.includes('jumbo') || name.includes('southern islands')) return 'promos';
+            
+            return null;
+        }
+
         function handleSymbolImgError(imgEl, code) {
             const parent = imgEl.parentNode;
             if (parent) {
@@ -556,17 +578,16 @@
                 'promos': { title: '🎁 Special & Promos', sets: [] }
             };
 
-            // DEDUZIERUNG ZWECKS VERMEIDUNG VON DUPLIKATEN
-            const processedSetIds = new Set();
+            const processedIds = new Set();
 
             allSetsData.forEach(set => {
-                const idLower = set.id.toLowerCase();
-                
-                // Vermeidet doppeltes Rendern
-                if (processedSetIds.has(idLower)) return;
-                processedSetIds.add(idLower);
+                const info = sanitizeSetObject(set);
+                const idClean = set.id.toLowerCase();
 
-                const info = getSetYearAndCode(set);
+                // Keine Doppelgänger
+                if (processedIds.has(idClean)) return;
+                processedIds.add(idClean);
+
                 const year = info.year;
                 const specialKey = getSpecialCategoryKey(set.id, set.name);
 
@@ -616,7 +637,7 @@
                 itemsList.forEach(item => {
                     const s = item.set;
                     const info = item.info;
-                    const total = s.cardCount.official || s.cardCount.total || 0;
+                    const total = info.total || s.cardCount.official || s.cardCount.total || 0;
                     
                     const collection = getSetCollection(s.id);
                     let owned = 0;

@@ -125,7 +125,7 @@
         }
         .btn:active { transform: scale(0.97); }
         .btn-outline { background: var(--surface-card); border: 1px solid var(--border-color); color: var(--text-main); }
-        .btn-refresh { background: rgba(59, 130, 246, 0.15); border: 1px solid primary-color; color: #93c5fd; }
+        .btn-refresh { background: rgba(59, 130, 246, 0.15); border: 1px solid var(--primary-color); color: #93c5fd; }
         .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; }
 
         /* REITER / AKKORDEON STYLES */
@@ -146,29 +146,25 @@
         .set-item-top { display: flex; justify-content: space-between; align-items: center; }
         .set-item-left { display: flex; align-items: center; gap: 12px; overflow: hidden; }
         
+        /* FESTER KÜRZEL-BADGE ANSTELLE VON DEFEKTEN BILDERN */
         .set-badge-icon { 
-            width: 36px; 
+            width: 44px; 
             height: 36px; 
             border-radius: 8px; 
-            background: rgba(255, 255, 255, 0.08); 
-            border: 1px solid var(--border-color); 
+            background: rgba(59, 130, 246, 0.15); 
+            border: 1px solid rgba(59, 130, 246, 0.3); 
             color: #93c5fd;
             display: flex; 
             align-items: center; 
             justify-content: center; 
             flex-shrink: 0; 
-            font-size: 0.65rem;
-            font-weight: 900;
+            font-size: 0.72rem;
+            font-weight: 900; 
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
             overflow: hidden;
             padding: 2px;
             text-align: center;
-        }
-
-        .set-badge-symbol-img { 
-            max-width: 85%; 
-            max-height: 85%; 
-            object-fit: contain; 
+            letter-spacing: -0.5px;
         }
 
         .set-item-name { font-size: 0.88rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -361,7 +357,7 @@
         let initialCardState = { normal: 0, reverse: 0, holo: 0 };
         let tempCardState = { normal: 0, reverse: 0, holo: 0 };
 
-        /* DIREKTE ZUORDNUNG DER ECHTEN KÜRZEL AUS DEN KARTEN & DATENBANK */
+        /* ZUORDNUNG DER ECHTEN KÜRZEL FÜR ALLE SETS */
         const KNOWN_SETS_DB = {
             'base1': { code: 'BS', total: 102 },
             'base2': { code: 'JU', total: 64 },
@@ -497,14 +493,6 @@
             try { localStorage.setItem(`collection_${setId}`, JSON.stringify(data)); } catch(e) {}
         }
 
-        /* LÄDT DAS KLEINE OFFIZIELLE SET-SYMBOL AUS DER API */
-        function getPrimarySymbolUrl(setObj) {
-            if (setObj && setObj.symbol) {
-                return setObj.symbol.endsWith('.png') ? setObj.symbol : `${setObj.symbol}.png`;
-            }
-            return `https://assets.tcgdex.net/en/${setObj.id}/symbol.png`;
-        }
-
         function checkIsUltraRareCard(cardName) {
             const nameLower = (cardName || '').toLowerCase();
             return nameLower.includes('-ex') || nameLower.includes(' ex') || 
@@ -575,14 +563,6 @@
             if (id.includes('promo') || id.includes('jumb') || id === 'misc' || id === 'wp' || id === 'si1' || name.includes('promo') || name.includes('jumbo') || name.includes('southern islands')) return 'promos';
             
             return null;
-        }
-
-        function handleSymbolImgError(imgEl, code) {
-            const parent = imgEl.parentNode;
-            if (parent) {
-                parent.className = 'set-badge-icon text-only';
-                parent.innerHTML = `<b>${code}</b>`;
-            }
         }
 
         function renderYearAccordion(searchFilter = '') {
@@ -671,18 +651,14 @@
                     else if (pct >= 20 && pct < 50) barColor = 'var(--warning-color)';
                     else if (pct >= 50) barColor = 'var(--accent-green)';
 
-                    const symbolUrl = getPrimarySymbolUrl(s);
-
                     const setRow = document.createElement('div');
                     setRow.className = 'set-item-row';
                     
-                    let badgeClass = 'set-badge-icon';
-                    let badgeContent = `<img class="set-badge-symbol-img" src="${symbolUrl}" alt="${info.code}" onclick="event.stopPropagation();" onerror="handleSymbolImgError(this, '${info.code}')">`;
-
+                    // HIER SETZEN WIR DIREKT DAS TEXT-KÜRZEL EIN
                     setRow.innerHTML = `
                         <div class="set-item-top">
                             <div class="set-item-left">
-                                <div class="${badgeClass}">${badgeContent}</div>
+                                <div class="set-badge-icon"><b>${info.code}</b></div>
                                 <div class="set-item-name">${s.name}</div>
                             </div>
                             <div class="set-item-stats">${owned}/${total} <span style="opacity:0.6; font-size:0.75rem;">| ${pct}%</span></div>
@@ -942,7 +918,7 @@
         function attemptCloseWithX() {
             const hasChanged = tempCardState.normal !== initialCardState.normal ||
                                tempCardState.reverse !== initialCardState.reverse ||
-                               tempCardState.holo !== initialCardState.initialCardState;
+                               tempCardState.holo !== initialCardState.holo;
 
             if (hasChanged) {
                 const confirmClose = confirm("Schließen ohne Speichern?\nWirklich schließen?");
@@ -998,7 +974,7 @@
         document.getElementById('btn-refresh-database').addEventListener('click', () => init(true));
         document.getElementById('btn-back-to-series').addEventListener('click', showSeriesList);
 
-        document.getElementById('btn-normal-minus').addEventListener('click', () => adjustVariant('normal', -1));
+        document.getElementById('btn-normal-minus').addEventListener('click', () => adjustValue = adjustVariant('normal', -1));
         document.getElementById('btn-normal-plus').addEventListener('click', () => adjustVariant('normal', 1));
         document.getElementById('btn-reverse-minus').addEventListener('click', () => adjustVariant('reverse', -1));
         document.getElementById('btn-reverse-plus').addEventListener('click', () => adjustVariant('reverse', 1));

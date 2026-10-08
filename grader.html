@@ -75,15 +75,37 @@
         .upload-card:hover { border-color: var(--primary-color); }
         .hidden-input { display: none; }
 
-        /* ARBEITSBEREICH */
+        /* ARBEITSBEREICH MIT LINIEN */
         .measurement-section { display: none; flex-direction: column; gap: 14px; }
         
         .image-container {
-            position: relative; width: 100%; max-height: 400px; background: #000;
-            border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color);
-            display: flex; justify-content: center; align-items: center; padding: 10px;
+            width: 100%; background: #000; border-radius: 12px; border: 1px solid var(--border-color);
+            display: flex; justify-content: center; align-items: center; padding: 10px; overflow: hidden;
         }
-        .preview-img { max-height: 380px; max-width: 100%; object-fit: contain; border-radius: 6px; display: block; }
+
+        /* WICHTIG: Dieser Wrapper hält das Bild und die Linien exakt übereinander */
+        .image-wrapper {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .preview-img { max-height: 450px; max-width: 100%; object-fit: contain; border-radius: 6px; display: block; }
+
+        /* Die visuellen Messlinien */
+        .measuring-line {
+            position: absolute;
+            z-index: 10;
+            box-shadow: 0 0 4px rgba(0,0,0,0.9);
+            pointer-events: none; /* Klicks gehen durch die Linie hindurch */
+        }
+        .line-v { top: 0; bottom: 0; width: 2px; }
+        .line-h { left: 0; right: 0; height: 2px; }
+
+        #line-left   { background-color: #ef4444; left: 10%; } /* Rot */
+        #line-right  { background-color: #3b82f6; right: 10%; } /* Blau */
+        #line-top    { background-color: #f59e0b; top: 10%; } /* Gelb */
+        #line-bottom { background-color: #10b981; bottom: 10%; } /* Grün */
 
         .slider-box {
             background: var(--surface-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;
@@ -110,7 +132,7 @@
         </div>
 
         <div class="info-box">
-            Foto aufnehmen oder auswählen. Stelle danach die Ränder mit den Schiebereglern so ein, dass sie die Ränder der Karte exakt abbilden.
+            Foto formatierfüllend und gerade aufnehmen. Nutze die Regler, um die farbigen Linien exakt auf die Ränder des inneren Artworks / Hologramms zu schieben.
         </div>
 
         <div class="action-grid" id="action-grid">
@@ -129,27 +151,35 @@
         <!-- MESSBEREICH -->
         <div class="measurement-section" id="measurement-section">
             <div class="image-container">
-                <img id="card-preview-img" class="preview-img" src="" alt="Hochgeladene Karte">
+                <div class="image-wrapper" id="image-wrapper">
+                    <img id="card-preview-img" class="preview-img" src="" alt="Hochgeladene Karte">
+                    
+                    <!-- Die farbigen Overlay-Linien -->
+                    <div class="measuring-line line-v" id="line-left"></div>
+                    <div class="measuring-line line-v" id="line-right"></div>
+                    <div class="measuring-line line-h" id="line-top"></div>
+                    <div class="measuring-line line-h" id="line-bottom"></div>
+                </div>
             </div>
 
             <div class="slider-box">
-                <div style="font-weight: 800; font-size: 0.9rem; border-bottom:1px solid var(--border-color); padding-bottom:6px;">Rand-Abstände einstellen</div>
+                <div style="font-weight: 800; font-size: 0.9rem; border-bottom:1px solid var(--border-color); padding-bottom:6px;">Liniendicke einstellen (Schiebt Linien nach innen)</div>
                 
                 <div class="slider-row">
-                    <div class="slider-label"><span>Linker Rand (Left):</span> <span id="val-left">50%</span></div>
-                    <input type="range" id="range-left" class="slider-input" min="0" max="100" value="50">
+                    <div class="slider-label"><span style="color:#ef4444;">Linker Rand (Rot):</span> <span id="val-left">10%</span></div>
+                    <input type="range" id="range-left" class="slider-input" min="0" max="50" value="10">
                 </div>
                 <div class="slider-row">
-                    <div class="slider-label"><span>Rechter Rand (Right):</span> <span id="val-right">50%</span></div>
-                    <input type="range" id="range-right" class="slider-input" min="0" max="100" value="50">
+                    <div class="slider-label"><span style="color:#3b82f6;">Rechter Rand (Blau):</span> <span id="val-right">10%</span></div>
+                    <input type="range" id="range-right" class="slider-input" min="0" max="50" value="10">
                 </div>
                 <div class="slider-row">
-                    <div class="slider-label"><span>Oberer Rand (Top):</span> <span id="val-top">50%</span></div>
-                    <input type="range" id="range-top" class="slider-input" min="0" max="100" value="50">
+                    <div class="slider-label"><span style="color:#f59e0b;">Oberer Rand (Gelb):</span> <span id="val-top">10%</span></div>
+                    <input type="range" id="range-top" class="slider-input" min="0" max="50" value="10">
                 </div>
                 <div class="slider-row">
-                    <div class="slider-label"><span>Unterer Rand (Bottom):</span> <span id="val-bottom">50%</span></div>
-                    <input type="range" id="range-bottom" class="slider-input" min="0" max="100" value="50">
+                    <div class="slider-label"><span style="color:#10b981;">Unterer Rand (Grün):</span> <span id="val-bottom">10%</span></div>
+                    <input type="range" id="range-bottom" class="slider-input" min="0" max="50" value="10">
                 </div>
             </div>
 
@@ -181,6 +211,11 @@
         const rangeTop = document.getElementById('range-top');
         const rangeBottom = document.getElementById('range-bottom');
 
+        const lineLeft = document.getElementById('line-left');
+        const lineRight = document.getElementById('line-right');
+        const lineTop = document.getElementById('line-top');
+        const lineBottom = document.getElementById('line-bottom');
+
         function handleImageLoad(file) {
             if (!file) return;
             const reader = new FileReader();
@@ -189,10 +224,11 @@
                 actionGrid.style.display = 'none';
                 measurementSection.style.display = 'flex';
                 
-                rangeLeft.value = 50;
-                rangeRight.value = 50;
-                rangeTop.value = 50;
-                rangeBottom.value = 50;
+                // Regler auf sinnvolle Startwerte zurücksetzen (10% Randdicke)
+                rangeLeft.value = 10;
+                rangeRight.value = 10;
+                rangeTop.value = 10;
+                rangeBottom.value = 10;
                 updateCalculation();
             };
             reader.readAsDataURL(file);
@@ -214,11 +250,19 @@
             let t = parseInt(rangeTop.value);
             let b = parseInt(rangeBottom.value);
 
+            // 1. Textwerte aktualisieren
             document.getElementById('val-left').textContent = `${l}%`;
             document.getElementById('val-right').textContent = `${r}%`;
             document.getElementById('val-top').textContent = `${t}%`;
             document.getElementById('val-bottom').textContent = `${b}%`;
 
+            // 2. Visuelle Linien auf dem Bild verschieben
+            lineLeft.style.left = l + '%';
+            lineRight.style.right = r + '%';
+            lineTop.style.top = t + '%';
+            lineBottom.style.bottom = b + '%';
+
+            // 3. Berechnung des Verhältnisses
             let sumLR = l + r;
             let pctL = sumLR > 0 ? Math.round((l / sumLR) * 100) : 50;
             let pctR = 100 - pctL;
@@ -233,6 +277,14 @@
             let maxDev = Math.max(Math.abs(pctL - 50), Math.abs(pctT - 50));
             let badge = document.getElementById('res-grade-badge');
             let status = document.getElementById('res-status');
+
+            if (sumLR === 0 || sumTB === 0) {
+                badge.textContent = "-";
+                badge.style.background = "var(--text-muted)";
+                status.textContent = "Bitte Ränder einstellen";
+                status.style.color = "var(--text-muted)";
+                return;
+            }
 
             if (maxDev <= 5) {
                 badge.textContent = "PSA 10";

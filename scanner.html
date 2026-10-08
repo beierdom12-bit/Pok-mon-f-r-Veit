@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pokémon OCR Scanner</title>
-    <!-- Tesseract.js für die Texterkennung im Browser -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <title>Pokémon Backend Scanner</title>
     <style>
         :root {
             --bg-color: #090d16;
@@ -51,19 +49,11 @@
         }
         .btn:active { transform: scale(0.97); }
         .btn-outline { background: var(--surface-card); border: 1px solid var(--border-color); color: var(--text-main); }
-        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; width: 100%; }
         .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; width: 100%; }
 
         .info-box {
             background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);
             border-radius: 12px; padding: 12px 16px; font-size: 0.82rem; color: #93c5fd; margin-bottom: 16px; line-height: 1.4;
-        }
-
-        .form-group { margin-bottom: 14px; }
-        .form-label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
-        .form-select, .form-input { 
-            width: 100%; padding: 12px 16px; background: var(--surface-card); 
-            border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-main); font-size: 0.9rem; outline: none;
         }
 
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
@@ -76,39 +66,26 @@
         .hidden-input { display: none; }
 
         .progress-box { display: none; margin-bottom: 16px; text-align: center; }
-        .progress-text { font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
-        .progress-bar { width: 100%; height: 8px; background: rgba(0,0,0,0.4); border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color); }
-        .progress-fill { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
 
         .result-container {
             display: none; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border-color); 
             border-radius: 12px; padding: 16px; flex-direction: column; align-items: center; gap: 14px;
         }
-        .found-img { max-height: 250px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .found-title { font-weight: 800; font-size: 1.1rem; color: var(--text-main); text-align: center; }
-        
-        .variant-row { display: flex; justify-content: space-between; align-items: center; width: 100%; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); background: var(--surface-card); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); }
-        .counter-btn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main); cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; }
-        .counter-btn:active { background: var(--primary-color); }
+        .raw-text { width: 100%; background: var(--bg-color); padding: 10px; border-radius: 8px; font-size: 0.75rem; color: var(--text-muted); max-height: 120px; overflow-y: auto; text-align: left; white-space: pre-wrap; }
     </style>
 </head>
 <body>
 
     <div class="main-container">
         <div class="header-title">
-            <h1>📷 KI OCR Scanner</h1>
+            <h1>🚀 Python-Backend Scanner</h1>
             <a href="index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">◄ Zurück</a>
         </div>
 
         <div class="info-box">
-            Starte die Kamera oder wähle ein Bild. Die KI liest den Text. <i>(Tipp: Wähle das passende Pokémon-Set aus, um die Treffergenauigkeit zu erhöhen)</i>.
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Pokémon Set (Optional)</label>
-            <select id="set-select" class="form-select">
-                <option value="">Lade Sets...</option>
-            </select>
+            Mache ein Foto deiner Karte. Das Bild wird direkt an deinen lokalen Python-Server geschickt, vom Glitzer befreit und analysiert.
         </div>
 
         <div class="action-grid" id="action-area">
@@ -125,247 +102,71 @@
         </div>
 
         <div class="progress-box" id="progress-box">
-            <div class="progress-text" id="progress-text">Künstliche Intelligenz startet...</div>
-            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+            <div class="progress-text" id="progress-text">Sende Bild an Python-Engine... 🔄</div>
         </div>
 
         <div class="result-container" id="result-container">
-            <img id="found-card-img" class="found-img" src="" alt="Gefundene Karte">
-            <div class="found-title" id="found-card-title">Lade...</div>
+            <div class="found-title" id="found-card-title">Ergebnis der KI-Analyse:</div>
+            <div class="raw-text" id="raw-text-output">Warte auf Daten...</div>
             
-            <div style="width:100%; display:flex; flex-direction:column; gap:8px;">
-                <div class="variant-row">
-                    <span>Normal</span>
-                    <div>
-                        <button class="counter-btn" onclick="adjustCount('normal', -1)">-</button>
-                        <span id="count-normal" style="margin:0 10px; color:var(--text-main); display:inline-block; width:16px; text-align:center;">0</span>
-                        <button class="counter-btn" onclick="adjustCount('normal', 1)">+</button>
-                    </div>
-                </div>
-                <div class="variant-row">
-                    <span>Reverse Holo</span>
-                    <div>
-                        <button class="counter-btn" onclick="adjustCount('reverse', -1)">-</button>
-                        <span id="count-reverse" style="margin:0 10px; color:var(--text-main); display:inline-block; width:16px; text-align:center;">0</span>
-                        <button class="counter-btn" onclick="adjustCount('reverse', 1)">+</button>
-                    </div>
-                </div>
-                <div class="variant-row">
-                    <span>Holo / Special Art</span>
-                    <div>
-                        <button class="counter-btn" onclick="adjustCount('holo', -1)">-</button>
-                        <span id="count-holo" style="margin:0 10px; color:var(--text-main); display:inline-block; width:16px; text-align:center;">0</span>
-                        <button class="counter-btn" onclick="adjustCount('holo', 1)">+</button>
-                    </div>
-                </div>
-            </div>
-
-            <button class="btn btn-success" id="btn-save" style="margin-top:10px;">💾 In Sammlung speichern</button>
-            <button class="btn btn-outline" id="btn-reset" style="width:100%;">Anderes Foto scannen</button>
+            <button class="btn btn-outline" id="btn-reset" style="width:100%;">Neues Foto scannen</button>
         </div>
     </div>
 
     <script>
-        const API_BASE_DE = 'https://api.tcgdex.net/v2/de';
-        const API_BASE_EN = 'https://api.tcgdex.net/v2/en';
-        
-        let allSets = [];
-        let currentSetCards = [];
-        let foundCard = null;
-        let counts = { normal: 0, reverse: 0, holo: 0 };
-
-        const setSelect = document.getElementById('set-select');
         const cameraInput = document.getElementById('camera-input');
         const galleryInput = document.getElementById('gallery-input');
-        const progressBox = document.getElementById('progress-box');
-        const progressText = document.getElementById('progress-text');
-        const progressFill = document.getElementById('progress-fill');
-        const resultContainer = document.getElementById('result-container');
         const actionArea = document.getElementById('action-area');
+        const progressBox = document.getElementById('progress-box');
+        const resultContainer = document.getElementById('result-container');
+        const rawTextOutput = document.getElementById('raw-text-output');
+        const foundCardTitle = document.getElementById('found-card-title');
 
-        // 1. Sets ohne zu blockieren im Hintergrund laden
-        async function loadSets() {
-            try {
-                let res = await fetch(`${API_BASE_DE}/sets`);
-                if(!res.ok) res = await fetch(`${API_BASE_EN}/sets`);
-                let data = await res.json();
-                allSets = data.filter(s => s.cardCount && s.cardCount.total > 0).sort((a,b) => b.id.localeCompare(a.id));
-                
-                setSelect.innerHTML = '<option value="">-- Jedes Set durchsuchen --</option>';
-                allSets.forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s.id;
-                    opt.textContent = `${s.name} (${s.id.toUpperCase()})`;
-                    setSelect.appendChild(opt);
-                });
-            } catch (err) {
-                setSelect.innerHTML = '<option value="">Offline / Standard-Suche aktiv</option>';
-            }
-        }
-
-        // 2. Set-Karten im Hintergrund laden
-        setSelect.addEventListener('change', async (e) => {
-            const setId = e.target.value;
-            if(!setId) {
-                currentSetCards = [];
-                return;
-            }
-            try {
-                let res = await fetch(`${API_BASE_DE}/sets/${setId}`);
-                if(!res.ok) res = await fetch(`${API_BASE_EN}/sets/${setId}`);
-                let setData = await res.json();
-                currentSetCards = setData.cards || [];
-            } catch(err) {
-                console.log("Fehler beim Vorab-Laden");
-            }
-        });
-
-        // 3. Bildverarbeitung starten (egal wie es ausgewählt wurde)
-        async function startScanning(file) {
+        async function sendToPythonBackend(file) {
             if (!file) return;
 
             actionArea.style.display = 'none';
-            resultContainer.style.display = 'none';
             progressBox.style.display = 'block';
-            progressFill.style.width = '0%';
-            progressText.textContent = "Analysiere Text mit künstlicher Intelligenz...";
+
+            const formData = new FormData();
+            formData.append('image', file);
 
             try {
-                const result = await Tesseract.recognize(file, 'deu+eng', {
-                    logger: m => {
-                        if(m.status === 'recognizing text') {
-                            let pct = Math.round(m.progress * 100);
-                            progressFill.style.width = `${pct}%`;
-                            progressText.textContent = `Scanne Karte... ${pct}%`;
-                        }
-                    }
+                // Schickt das Bild an deinen lokalen Python-Flask-Server auf dem PC
+                const response = await fetch('http://127.0.0.1:5000/scan', {
+                    method: 'POST',
+                    body: formData
                 });
 
-                const recognizedText = result.data.text.toLowerCase();
-                await findMatchingCard(recognizedText);
+                const data = await response.json();
+                
+                progressBox.style.display = 'none';
+                resultContainer.style.display = 'flex';
+
+                if (data.success) {
+                    foundCardTitle.textContent = data.match_found ? "✅ Karte erfolgreich erkannt!" : "⚠️ Text gelesen, aber kein Treffer";
+                    rawTextOutput.textContent = data.text;
+                } else {
+                    foundCardTitle.textContent = "❌ Fehler auf dem Server";
+                    rawTextOutput.textContent = data.error;
+                }
+
             } catch (err) {
-                alert("Texterkennung fehlgeschlagen. Versuche es mit einem schärferen Foto.");
-                resetUI();
+                progressBox.style.display = 'none';
+                actionArea.style.display = 'grid';
+                alert("Verbindung zum Python-Server fehlgeschlagen!\nStelle sicher, dass das Skript in VS Code läuft und der Server aktiv ist.");
             }
         }
 
-        cameraInput.addEventListener('change', (e) => startScanning(e.target.files[0]));
-        galleryInput.addEventListener('change', (e) => startScanning(e.target.files[0]));
+        cameraInput.addEventListener('change', (e) => sendToPythonBackend(e.target.files[0]));
+        galleryInput.addEventListener('change', (e) => sendToPythonBackend(e.target.files[0]));
 
-        // 4. Abgleich mit der Datenbank (sollte offline/online robust sein)
-        async function findMatchingCard(text) {
-            progressBox.style.display = 'none';
-            
-            let bestMatch = null;
-            let highestScore = 0;
-            const numberMatches = text.match(/\d+/g) || [];
-
-            // Falls kein Set vorausgewählt wurde, greifen wir auf ein Standard-Suche zurück
-            if (currentSetCards.length === 0) {
-                const searchId = setSelect.value || "sv06"; // Fallback auf das aktivste moderne Set
-                try {
-                    let res = await fetch(`${API_BASE_DE}/sets/${searchId}`);
-                    if(!res.ok) res = await fetch(`${API_BASE_EN}/sets/${searchId}`);
-                    let setData = await res.json();
-                    currentSetCards = setData.cards || [];
-                } catch(e) {}
-            }
-
-            currentSetCards.forEach(card => {
-                let score = 0;
-                const cardName = card.name.toLowerCase();
-                const localId = card.localId.toString();
-
-                if (cardName.length > 3 && text.includes(cardName)) score += 50;
-                if (numberMatches.includes(localId)) score += 30;
-                if (text.includes(localId)) score += 20;
-
-                if (score > highestScore) {
-                    highestScore = score;
-                    bestMatch = card;
-                }
-            });
-
-            if (bestMatch && highestScore > 10) {
-                showResult(bestMatch);
-            } else {
-                // Notfall-Option: Ermögliche manuelle Suche, falls das Bild zu unscharf war
-                let manualSearch = prompt("Karte nicht eindeutig erkannt.\nBitte Name oder Nummer manuell eingeben:");
-                if (manualSearch) {
-                    let textLower = manualSearch.toLowerCase();
-                    let found = currentSetCards.find(c => c.name.toLowerCase().includes(textLower) || c.localId.toString() === textLower);
-                    if (found) {
-                        showResult(found);
-                        return;
-                    }
-                }
-                alert("Karte konnte nicht zugeordnet werden.");
-                resetUI();
-            }
-        }
-
-        function showResult(card) {
-            foundCard = card;
-            const setId = setSelect.value || "sv06";
-            
-            const collection = JSON.parse(localStorage.getItem(`collection_${setId}`) || '{}');
-            const currentData = collection[card.id] || { normal: 0, reverse: 0, holo: 0 };
-            
-            counts = { normal: currentData.normal, reverse: currentData.reverse, holo: currentData.holo };
-            updateCounters();
-
-            document.getElementById('found-card-title').textContent = `#${card.localId} ${card.name}`;
-            document.getElementById('found-card-img').src = card.image ? `${card.image}/high.webp` : `https://assets.tcgdex.net/de/${setId}/${card.localId}/high.webp`;
-            
-            resultContainer.style.display = 'flex';
-        }
-
-        window.adjustCount = function(type, amount) {
-            counts[type] = Math.max(0, counts[type] + amount);
-            updateCounters();
-        };
-
-        function updateCounters() {
-            document.getElementById('count-normal').textContent = counts.normal;
-            document.getElementById('count-reverse').textContent = counts.reverse;
-            document.getElementById('count-holo').textContent = counts.holo;
-        }
-
-        document.getElementById('btn-save').addEventListener('click', () => {
-            if(!foundCard) return;
-            const setId = setSelect.value || "sv06";
-            const collection = JSON.parse(localStorage.getItem(`collection_${setId}`) || '{}');
-            
-            if (counts.normal === 0 && counts.reverse === 0 && counts.holo === 0) {
-                delete collection[foundCard.id];
-            } else {
-                collection[foundCard.id] = {
-                    normal: counts.normal,
-                    reverse: counts.reverse,
-                    holo: counts.holo,
-                    name: foundCard.name,
-                    localId: foundCard.localId
-                };
-            }
-            
-            localStorage.setItem(`collection_${setId}`, JSON.stringify(collection));
-            const btn = document.getElementById('btn-save');
-            btn.textContent = "✅ Gespeichert!";
-            setTimeout(() => { btn.textContent = "💾 In Sammlung speichern"; }, 1500);
-        });
-
-        document.getElementById('btn-reset').addEventListener('click', resetUI);
-
-        function resetUI() {
+        document.getElementById('btn-reset').addEventListener('click', () => {
             cameraInput.value = '';
             galleryInput.value = '';
-            foundCard = null;
             resultContainer.style.display = 'none';
-            progressBox.style.display = 'none';
             actionArea.style.display = 'grid';
-        }
-
-        loadSets();
+        });
     </script>
 </body>
 </html>

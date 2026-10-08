@@ -8,73 +8,94 @@
         body { background: #090d16; color: #f8fafc; font-family: sans-serif; padding: 20px; text-align: center; }
         .box { background: #151d2e; padding: 20px; border-radius: 12px; max-width: 500px; margin: auto; border: 1px solid rgba(255,255,255,0.1); }
         .btn { background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; }
-        img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 15px; }
+        .btn-back { background: rgba(255,255,255,0.1); color: #94a3b8; margin-bottom: 15px; }
+        img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 15px; max-height: 320px; object-fit: contain; }
     </style>
 </head>
 <body>
 
     <div class="box">
+        <button class="btn btn-back" onclick="window.location.href='index.html'">◄ Zurück zur Hauptsammlung</button>
         <h1>📷 Pokémon KI Scanner</h1>
         <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 8px;">Wähle ein Karten-Foto aus:</p>
         
-        <input type="file" id="file-input" accept="image/*" style="margin-top: 15px;"><br>
+        <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none;"><br>
+        <button class="btn" id="btn-trigger" style="background:#10b981;">📁 Foto auswählen / Aufnehmen</button>
         
+        <div id="loading-area" style="display:none; margin-top: 20px; color: #3b82f6; font-weight: bold;">
+            ⏳ Gemini KI analysiert die Karte...
+        </div>
+
         <div id="result-area" style="display:none;">
             <img id="card-img" src="" alt="Karte">
             <h2 id="card-title" style="margin-top: 10px; font-size: 1.1rem;"></h2>
+            <p id="card-set" style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;"></p>
             <button class="btn" id="btn-save">💾 In Sammlung speichern</button>
         </div>
     </div>
 
     <script>
         const fileInput = document.getElementById('file-input');
+        const btnTrigger = document.getElementById('btn-trigger');
+        const loadingArea = document.getElementById('loading-area');
         const resultArea = document.getElementById('result-area');
         const cardImg = document.getElementById('card-img');
         const cardTitle = document.getElementById('card-title');
+        const cardSet = document.getElementById('card-set');
         
         let currentCard = null;
+
+        btnTrigger.addEventListener('click', () => fileInput.click());
 
         fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            cardTitle.textContent = "Analysiere mit Python-Backend...";
-            resultArea.style.display = 'block';
-            cardImg.src = '';
+            resultArea.style.display = 'none';
+            loadingArea.style.display = 'block';
 
             const formData = new FormData();
             formData.append('image', file);
 
             try {
-                // WICHTIG: Teste diese Seite am besten direkt lokal im Browser, 
-                // indem du die Datei per Doppelklick auf dem Laptop öffnest, 
-                // damit der lokale Server (127.0.0.1) erreicht werden kann!
                 const response = await fetch('http://127.0.0.1:5000/scan', {
                     method: 'POST',
                     body: formData
                 });
 
                 const data = await response.json();
+                loadingArea.style.display = 'none';
 
                 if (data.success && data.match_found && data.card) {
                     currentCard = data.card;
-                    cardTitle.textContent = `#${data.card.localId} ${data.card.name} (${data.card.set})`;
-                    cardImg.src = data.card.image ? `${data.card.image}/high.webp` : '';
+                    cardTitle.textContent = `#${data.card.localId || '---'} ${data.card.name}`;
+                    cardSet.textContent = `Set: ${data.card.set}`;
+                    cardImg.src = data.card.image || '';
+                    resultArea.style.display = 'block';
                 } else {
-                    cardTitle.textContent = "⚠️ Karte nicht erkannt. Versuche ein anderes Foto.";
+                    alert("⚠️ Karte konnte nicht eindeutig zugeordnet werden. Bitte versuche ein schärferes Foto.");
                 }
             } catch (err) {
-                cardTitle.textContent = "❌ Fehler: Keine Verbindung zum Python-Server (Läuft Flask in VS Code?)";
+                loadingArea.style.display = 'none';
+                alert("❌ Fehler: Keine Verbindung zum Python-Server (Läuft Flask in VS Code?).");
             }
         });
 
         document.getElementById('btn-save').addEventListener('click', () => {
             if (!currentCard) return;
-            const collection = JSON.parse(localStorage.getItem('collection_scanned') || '{}');
-            collection[currentCard.name] = { normal: 1, name: currentCard.name };
-            localStorage.setItem('collection_scanned', JSON.stringify(collection));
             
-            alert("Erfolgreich in der Sammlung gespeichert!");
+            // Speichert die Karte im localStorage für deine Hauptsammlung
+            const collection = JSON.parse(localStorage.getItem('pokemon_collection') || '{}');
+            const cardId = currentCard.localId || currentCard.name;
+            
+            collection[cardId] = {
+                normal: (collection[cardId]?.normal || 0) + 1,
+                reverse: collection[cardId]?.reverse || 0,
+                holo: collection[cardId]?.holo || 0
+            };
+            
+            localStorage.setItem('pokemon_collection', JSON.stringify(collection));
+            alert("✅ Erfolgreich in der Sammlung gespeichert!");
         });
     </script>
 </body>

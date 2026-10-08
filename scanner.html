@@ -1,128 +1,13 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pokémon Backend Scanner</title>
-    <style>
-        :root {
-            --bg-color: #090d16;
-            --surface-color: rgba(21, 29, 46, 0.7);
-            --surface-card: #151d2e;
-            --primary-color: #3b82f6;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: rgba(255, 255, 255, 0.08);
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            background-color: var(--bg-color); 
-            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #090d16 70%);
-            color: var(--text-main); 
-            padding: 16px 12px 32px 12px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .main-container { 
-            width: 100%; max-width: 900px; background: var(--surface-color); 
-            backdrop-filter: blur(12px); border-radius: 16px; padding: 18px; 
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); 
-        }
-
-        .header-title { 
-            display: flex; align-items: center; gap: 10px; margin-bottom: 16px; 
-            border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap;
-        }
-        .header-title h1 { font-size: 1.25rem; color: var(--text-main); flex-grow: 1; font-weight: 800; }
-
-        .btn { 
-            padding: 10px 16px; border: none; border-radius: 10px; font-weight: 700; font-size: 0.82rem; 
-            cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; 
-            transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-decoration: none;
-        }
-        .btn:active { transform: scale(0.97); }
-        .btn-outline { background: var(--surface-card); border: 1px solid var(--border-color); color: var(--text-main); }
-        .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; width: 100%; }
-
-        .info-box {
-            background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 12px; padding: 12px 16px; font-size: 0.82rem; color: #93c5fd; margin-bottom: 16px; line-height: 1.4;
-        }
-
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-        .upload-card {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border: 2px dashed var(--border-color); border-radius: 14px; padding: 24px;
-            background: var(--surface-card); cursor: pointer; text-align: center; transition: border-color 0.2s;
-        }
-        .upload-card:hover { border-color: var(--primary-color); }
-        .hidden-input { display: none; }
-
-        .progress-box { display: none; margin-bottom: 16px; text-align: center; }
-        .progress-text { font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
-
-        .result-container {
-            display: none; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border-color); 
-            border-radius: 12px; padding: 16px; flex-direction: column; align-items: center; gap: 14px;
-        }
-        .found-title { font-weight: 800; font-size: 1.1rem; color: var(--text-main); text-align: center; }
-        .raw-text { width: 100%; background: var(--bg-color); padding: 10px; border-radius: 8px; font-size: 0.75rem; color: var(--text-muted); max-height: 120px; overflow-y: auto; text-align: left; white-space: pre-wrap; }
-    </style>
-</head>
-<body>
-
-    <div class="main-container">
-        <div class="header-title">
-            <h1>🚀 Python-Backend Scanner</h1>
-            <a href="index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">◄ Zurück</a>
-        </div>
-
-        <div class="info-box">
-            Mache ein Foto deiner Karte. Das Bild wird direkt an deinen lokalen Python-Server geschickt, vom Glitzer befreit und analysiert.
-        </div>
-
-        <div class="action-grid" id="action-area">
-            <label class="upload-card">
-                <span style="font-size: 2rem; margin-bottom: 6px;">📸</span>
-                <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">Kamera starten</span>
-                <input type="file" id="camera-input" class="hidden-input" accept="image/*" capture="environment">
-            </label>
-            <label class="upload-card">
-                <span style="font-size: 2rem; margin-bottom: 6px;">🖼️</span>
-                <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">Aus Galerie wählen</span>
-                <input type="file" id="gallery-input" class="hidden-input" accept="image/*">
-            </label>
-        </div>
-
-        <div class="progress-box" id="progress-box">
-            <div class="progress-text" id="progress-text">Sende Bild an Python-Engine... 🔄</div>
-        </div>
-
-        <div class="result-container" id="result-container">
-            <div class="found-title" id="found-card-title">Ergebnis der KI-Analyse:</div>
-            <div class="raw-text" id="raw-text-output">Warte auf Daten...</div>
-            
-            <button class="btn btn-outline" id="btn-reset" style="width:100%;">Neues Foto scannen</button>
-        </div>
-    </div>
-
     <script>
         const cameraInput = document.getElementById('camera-input');
         const galleryInput = document.getElementById('gallery-input');
         const actionArea = document.getElementById('action-area');
         const progressBox = document.getElementById('progress-box');
         const resultContainer = document.getElementById('result-container');
-        const rawTextOutput = document.getElementById('raw-text-output');
-        const foundCardTitle = document.getElementById('found-card-title');
+        
+        let scannedCardData = null;
 
-        async function sendToPythonBackend(file) {
+        async function sendToBackend(file) {
             if (!file) return;
 
             actionArea.style.display = 'none';
@@ -132,34 +17,50 @@
             formData.append('image', file);
 
             try {
-                // Schickt das Bild an deinen lokalen Python-Flask-Server auf dem PC
                 const response = await fetch('http://127.0.0.1:5000/scan', {
                     method: 'POST',
                     body: formData
                 });
 
                 const data = await response.json();
-                
                 progressBox.style.display = 'none';
-                resultContainer.style.display = 'flex';
 
-                if (data.success) {
-                    foundCardTitle.textContent = data.match_found ? "✅ Karte erfolgreich erkannt!" : "⚠️ Text gelesen, aber kein Treffer";
-                    rawTextOutput.textContent = data.text;
+                if (data.success && data.match_found && data.card) {
+                    scannedCardData = data.card;
+                    document.getElementById('card-title').textContent = `#${data.card.localId} ${data.card.name}`;
+                    document.getElementById('card-set').textContent = `Set: ${data.card.set}`;
+                    
+                    // Bild-URL direkt setzen mit Fallback
+                    const imgUrl = data.card.image ? `${data.card.image}/high.webp` : '';
+                    document.getElementById('card-img').src = imgUrl;
+                    
+                    resultContainer.style.display = 'flex';
                 } else {
-                    foundCardTitle.textContent = "❌ Fehler auf dem Server";
-                    rawTextOutput.textContent = data.error;
+                    alert("Karte erkannt, aber keine Bild-Daten von der API erhalten.");
+                    actionArea.style.display = 'grid';
                 }
 
             } catch (err) {
                 progressBox.style.display = 'none';
                 actionArea.style.display = 'grid';
-                alert("Verbindung zum Python-Server fehlgeschlagen!\nStelle sicher, dass das Skript in VS Code läuft und der Server aktiv ist.");
+                alert("Verbindung zum Python-Server fehlgeschlagen!");
             }
         }
 
-        cameraInput.addEventListener('change', (e) => sendToPythonBackend(e.target.files[0]));
-        galleryInput.addEventListener('change', (e) => sendToPythonBackend(e.target.files[0]));
+        cameraInput.addEventListener('change', (e) => sendToBackend(e.target.files[0]));
+        galleryInput.addEventListener('change', (e) => sendToBackend(e.target.files[0]));
+
+        document.getElementById('btn-save').addEventListener('click', () => {
+            if (!scannedCardData) return;
+            const key = `collection_scanned`;
+            const collection = JSON.parse(localStorage.getItem(key) || '{}');
+            collection[scannedCardData.name] = { normal: 1, name: scannedCardData.name };
+            localStorage.setItem(key, JSON.stringify(collection));
+
+            const btn = document.getElementById('btn-save');
+            btn.textContent = "✅ In Sammlung gespeichert!";
+            setTimeout(() => { btn.textContent = "💾 In Sammlung speichern"; }, 2000);
+        });
 
         document.getElementById('btn-reset').addEventListener('click', () => {
             cameraInput.value = '';
@@ -168,5 +69,3 @@
             actionArea.style.display = 'grid';
         });
     </script>
-</body>
-</html>

@@ -76,28 +76,32 @@
         .upload-card:hover { border-color: var(--primary-color); }
         .hidden-input { display: none; }
 
-        /* ARBEITSBEREICH FÜR DIE MESSUNG */
-        .measurement-section { display: none; flex-direction: column; gap: 16px; }
+        /* INTERAKTIVER ARBEITSBEREICH */
+        .measurement-section { display: none; flex-direction: column; gap: 14px; }
         
-        .image-viewport {
-            position: relative; width: 100%; max-height: 450px; background: rgba(0,0,0,0.6);
+        .viewport-wrapper {
+            position: relative; width: 100%; height: 400px; background: #000;
             border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color);
-            display: flex; justify-content: center; align-items: center; padding: 10px;
+            touch-action: none;
         }
-        .viewport-img { max-height: 400px; max-width: 100%; object-fit: contain; border-radius: 6px; display: block; margin: 0 auto; }
+        
+        #canvas-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            transform-origin: center center;
+        }
 
-        .slider-controls {
-            background: var(--surface-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;
-            display: flex; flex-direction: column; gap: 12px;
+        canvas { display: block; cursor: crosshair; }
+
+        .tools-bar {
+            display: flex; gap: 8px; justify-content: space-between; align-items: center;
+            background: var(--surface-card); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color);
         }
-        .slider-row { display: flex; flex-direction: column; gap: 4px; }
-        .slider-label { display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 700; color: var(--text-muted); }
-        .slider-input { width: 100%; accent-color: var(--primary-color); cursor: pointer; }
 
         .results-box {
             background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px;
         }
-        .result-row { display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 8px; color: var(--text-muted); }
+        .result-row { display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 6px; color: var(--text-muted); }
         .result-value { font-weight: 800; color: var(--text-main); }
         .grade-badge { background: var(--accent-green); color: white; padding: 3px 12px; border-radius: 12px; font-size: 0.9rem; font-weight: 800; }
     </style>
@@ -106,12 +110,14 @@
 
     <div class="main-container">
         <div class="header-title">
-            <h1>📐 Pokémon Zentrierungs-Messer</h1>
+            <h1>📐 Visueller Zentrierungs-Messer</h1>
             <a href="index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">◄ Zurück</a>
         </div>
 
         <div class="info-box">
-            Fotografiere deine Karte möglichst formatierfüllend von oben (ohne starken Winkel oder Blitzreflexe). Verschiebe anschließend die Regler so, dass die Messlinien exakt auf den gelben bzw. silbernen Rändern der Karte liegen.
+            1. Foto hochladen.<br>
+            2. Ziehe die 4 farbigen Linien (Oben, Unten, Links, Rechts) direkt auf dem Bild an die Außenränder der Karte.<br>
+            3. Nutze die Zoom-Buttons, um feine Korrekturen vorzunehmen.
         </div>
 
         <div class="action-grid" id="action-grid">
@@ -129,44 +135,34 @@
 
         <!-- MESSBEREICH -->
         <div class="measurement-section" id="measurement-section">
-            <div class="image-viewport">
-                <img id="card-viewport-img" class="viewport-img" src="" alt="Karte zur Messung">
+            <div class="viewport-wrapper" id="viewport-wrapper">
+                <div id="canvas-container">
+                    <canvas id="crop-canvas"></canvas>
+                </div>
             </div>
 
-            <div class="slider-controls">
-                <div style="font-weight: 800; font-size: 0.9rem; border-bottom:1px solid var(--border-color); padding-bottom:6px;">Ränder Feinjustierung</div>
-                
-                <div class="slider-row">
-                    <div class="slider-label"><span>Linker Rand (Left):</span> <span id="val-left">50%</span></div>
-                    <input type="range" id="range-left" class="slider-input" min="0" max="100" value="50">
-                </div>
-                <div class="slider-row">
-                    <div class="slider-label"><span>Rechter Rand (Right):</span> <span id="val-right">50%</span></div>
-                    <input type="range" id="range-right" class="slider-input" min="0" max="100" value="50">
-                </div>
-                <div class="slider-row">
-                    <div class="slider-label"><span>Oberer Rand (Top):</span> <span id="val-top">50%</span></div>
-                    <input type="range" id="range-top" class="slider-input" min="0" max="100" value="50">
-                </div>
-                <div class="slider-row">
-                    <div class="slider-label"><span>Unterer Rand (Bottom):</span> <span id="val-bottom">50%</span></div>
-                    <input type="range" id="range-bottom" class="slider-input" min="0" max="100" value="50">
+            <div class="tools-bar">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Zoom:</div>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn btn-outline" id="btn-zoom-out" style="padding:6px 12px;">➖</button>
+                    <button class="btn btn-outline" id="btn-zoom-reset" style="padding:6px 12px;">1:1</button>
+                    <button class="btn btn-outline" id="btn-zoom-in" style="padding:6px 12px;">➕</button>
                 </div>
             </div>
 
             <div class="results-box">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <span style="font-weight:800; font-size:0.9rem;">Zentrierungs-Score:</span>
                     <span class="grade-badge" id="res-grade-badge">PSA 10</span>
                 </div>
-                <div class="result-row"><span>Horizontale Verteilung (L/R):</span> <span class="result-value" id="res-lr">50% / 50%</span></div>
-                <div class="result-row"><span>Vertikale Verteilung (O/U):</span> <span class="result-value" id="res-tb">50% / 50%</span></div>
-                <div class="result-row" style="margin-top:8px; border-top:1px solid var(--border-color); padding-top:6px;">
-                    <span>PSA 10 tauglich?:</span> <span class="result-value" id="res-status" style="color:var(--accent-green)">Ja (Perfekt)</span>
+                <div class="result-row"><span>Horizontale Verteilung (Links / Rechts):</span> <span class="result-value" id="res-lr">50% / 50%</span></div>
+                <div class="result-row"><span>Vertikale Verteilung (Oben / Unten):</span> <span class="result-value" id="res-tb">50% / 50%</span></div>
+                <div class="result-row" style="margin-top:6px; border-top:1px solid var(--border-color); padding-top:6px;">
+                    <span>PSA 10 Eignung:</span> <span class="result-value" id="res-status" style="color:var(--accent-green)">Perfekt</span>
                 </div>
             </div>
 
-            <button class="btn btn-outline" id="btn-reset-photo" style="width:100%;">🔄 Anderes Foto aufnehmen</button>
+            <button class="btn btn-outline" id="btn-reset-photo" style="width:100%;">🔄 Anderes Foto wählen</button>
         </div>
     </div>
 
@@ -175,27 +171,48 @@
         const galleryInput = document.getElementById('gallery-input');
         const actionGrid = document.getElementById('action-grid');
         const measurementSection = document.getElementById('measurement-section');
-        const cardViewportImg = document.getElementById('card-viewport-img');
+        
+        const canvas = document.getElementById('crop-canvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('viewport-wrapper');
 
-        const rangeLeft = document.getElementById('range-left');
-        const rangeRight = document.getElementById('range-right');
-        const rangeTop = document.getElementById('range-top');
-        const rangeBottom = document.getElementById('range-bottom');
+        let img = new Image();
+        let scale = 1;
+        let panX = 0;
+        let panY = 0;
+
+        // Positionen der 4 Linien in Prozent (0 bis 100) relativ zum Bild
+        let lines = {
+            top: 15,
+            bottom: 85,
+            left: 15,
+            right: 85
+        };
+
+        let activeLine = null; // 'top', 'bottom', 'left', 'right'
 
         function handleImageLoad(file) {
             if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
-                cardViewportImg.src = e.target.result;
-                actionGrid.style.display = 'none';
-                measurementSection.style.display = 'flex';
-                
-                // Regler auf Standardwerte zurücksetzen
-                rangeLeft.value = 50;
-                rangeRight.value = 50;
-                rangeTop.value = 50;
-                rangeBottom.value = 50;
-                updateCalculation();
+                img.onload = () => {
+                    actionGrid.style.display = 'none';
+                    measurementSection.style.display = 'flex';
+                    
+                    // Canvas-Größe an Bild anpassen
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+
+                    // Standard-Linien im inneren Bereich platzieren
+                    lines.top = Math.round(img.height * 0.1);
+                    lines.bottom = Math.round(img.height * 0.9);
+                    lines.left = Math.round(img.width * 0.1);
+                    lines.right = Math.round(img.width * 0.9);
+
+                    resetZoomAndPan();
+                    draw();
+                };
+                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
@@ -210,52 +227,101 @@
             galleryInput.value = '';
         });
 
-        function updateCalculation() {
-            let l = parseInt(rangeLeft.value);
-            let r = parseInt(rangeRight.value);
-            let t = parseInt(rangeTop.value);
-            let b = parseInt(rangeBottom.value);
+        function resetZoomAndPan() {
+            const wrapperWidth = wrapper.clientWidth;
+            const wrapperHeight = wrapper.clientHeight;
+            
+            const scaleX = wrapperWidth / img.width;
+            const scaleY = wrapperHeight / img.height;
+            scale = Math.min(scaleX, scaleY) * 0.85;
 
-            // Prozentanzeigen aktualisieren
-            document.getElementById('val-left').textContent = `${l}%`;
-            document.getElementById('val-right').textContent = `${r}%`;
-            document.getElementById('val-top').textContent = `${t}%`;
-            document.getElementById('val-bottom').textContent = `${b}%`;
+            panX = (wrapperWidth - img.width * scale) / 2;
+            panY = (wrapperHeight - img.height * scale) / 2;
+            updateCanvasTransform();
+        }
 
-            // Horizontales und vertikales Verhältnis berechnen
-            let sumLR = l + r;
-            let pctL = sumLR > 0 ? Math.round((l / sumLR) * 100) : 50;
+        function updateCanvasTransform() {
+            canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            canvas.style.transformOrigin = '0 0';
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+
+            // Linien zeichnen
+            const lineWidth = Math.max(2, Math.round(3 / scale));
+
+            // Linke Linie (Rot)
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            ctx.moveTo(lines.left, 0);
+            ctx.lineTo(lines.left, canvas.height);
+            ctx.stroke();
+
+            // Rechte Linie (Blau)
+            ctx.strokeStyle = '#3b82f6';
+            ctx.beginPath();
+            ctx.moveTo(lines.right, 0);
+            ctx.lineTo(lines.right, canvas.height);
+            ctx.stroke();
+
+            // Oben Linie (Gelb)
+            ctx.strokeStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.moveTo(0, lines.top);
+            ctx.lineTo(canvas.width, lines.top);
+            ctx.stroke();
+
+            // Unten Linie (Grün)
+            ctx.strokeStyle = '#10b981';
+            ctx.beginPath();
+            ctx.moveTo(0, lines.bottom);
+            ctx.lineTo(canvas.width, lines.bottom);
+            ctx.stroke();
+
+            calculateResults();
+        }
+
+        function calculateResults() {
+            let width = lines.right - lines.left;
+            let height = lines.bottom - lines.top;
+            if (width <= 0 || height <= 0) return;
+
+            let leftSpace = lines.left;
+            let rightSpace = canvas.width - lines.right;
+            let sumLR = leftSpace + rightSpace;
+            let pctL = sumLR > 0 ? Math.round((leftSpace / sumLR) * 100) : 50;
             let pctR = 100 - pctL;
 
-            let sumTB = t + b;
-            let pctT = sumTB > 0 ? Math.round((t / sumTB) * 100) : 50;
+            let topSpace = lines.top;
+            let bottomSpace = canvas.height - lines.bottom;
+            let sumTB = topSpace + bottomSpace;
+            let pctT = sumTB > 0 ? Math.round((topSpace / sumTB) * 100) : 50;
             let pctB = 100 - pctT;
 
             document.getElementById('res-lr').textContent = `${pctL}% / ${pctR}%`;
             document.getElementById('res-tb').textContent = `${pctT}% / ${pctB}%`;
 
-            // PSA 10 Prüfung (Vorderseite: max 55/45 bis 60/40 je nach Jahr, Rückseite: bis 75/25)
-            let maxDeviationLR = Math.abs(pctL - 50);
-            let maxDeviationTB = Math.abs(pctT - 50);
-            let maxDev = Math.max(maxDeviationLR, maxDeviationTB);
-
+            let maxDev = Math.max(Math.abs(pctL - 50), Math.abs(pctT - 50));
             let badge = document.getElementById('res-grade-badge');
             let status = document.getElementById('res-status');
 
             if (maxDev <= 5) {
                 badge.textContent = "PSA 10";
                 badge.style.background = "var(--accent-green)";
-                status.textContent = "Ja (Perfekt gemappt)";
+                status.textContent = "Perfekt (Gem Mint)";
                 status.style.color = "var(--accent-green)";
             } else if (maxDev <= 10) {
                 badge.textContent = "PSA 9";
                 badge.style.background = "var(--primary-color)";
-                status.textContent = "Grenzwertig / PSA 9 sicher";
+                status.textContent = "Sehr gut (Mint)";
                 status.style.color = "#93c5fd";
             } else if (maxDev <= 18) {
                 badge.textContent = "PSA 8";
                 badge.style.background = "var(--warning-color)";
-                status.textContent = "Nein (Off-Center)";
+                status.textContent = "Leicht off-center";
                 status.style.color = "var(--warning-color)";
             } else {
                 badge.textContent = "PSA 7 oder schlechter";
@@ -265,9 +331,63 @@
             }
         }
 
-        [rangeLeft, rangeRight, rangeTop, rangeBottom].forEach(el => {
-            el.addEventListener('input', updateCalculation);
+        // TOUCH & MOUSE INTERACTION FÜR LININEN VERSCHIEBEN & ZOOM
+        let isDragging = false;
+        let startX = 0, startY = 0;
+
+        canvas.addEventListener('pointerdown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            // Koordinaten in Bild-Pixel umrechnen
+            const x = (e.clientX - rect.left) / scale;
+            const y = (e.clientY - rect.top) / scale;
+
+            // Prüfen, welche Linie am nächsten ist (Toleranz 20 Pixel)
+            const tolerance = 25 / scale;
+            let distLeft = Math.abs(x - lines.left);
+            let distRight = Math.abs(x - lines.right);
+            let distTop = Math.abs(y - lines.top);
+            let distBottom = Math.abs(y - lines.bottom);
+
+            let min = Math.min(distLeft, distRight, distTop, distBottom);
+            if (min < tolerance) {
+                if (min === distLeft) activeLine = 'left';
+                else if (min === distRight) activeLine = 'right';
+                else if (min === distTop) activeLine = 'top';
+                else if (min === distBottom) activeLine = 'bottom';
+                isDragging = true;
+                canvas.setPointerCapture(e.pointerId);
+            }
         });
+
+        canvas.addEventListener('pointermove', (e) => {
+            if (!isDragging || !activeLine) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / scale;
+            const y = (e.clientY - rect.top) / scale;
+
+            if (activeLine === 'left') lines.left = Math.max(0, Math.min(x, lines.right - 10));
+            if (activeLine === 'right') lines.right = Math.min(canvas.width, Math.max(x, lines.left + 10));
+            if (activeLine === 'top') lines.top = Math.max(0, Math.min(y, lines.bottom - 10));
+            if (activeLine === 'bottom') lines.bottom = Math.min(canvas.height, Math.max(y, lines.top + 10));
+
+            draw();
+        });
+
+        canvas.addEventListener('pointerup', (e) => {
+            isDragging = false;
+            activeLine = null;
+        });
+
+        // ZOOM BUTTONS
+        document.getElementById('btn-zoom-in').addEventListener('click', () => {
+            scale = Math.min(5, scale * 1.25);
+            updateCanvasTransform();
+        });
+        document.getElementById('btn-zoom-out').addEventListener('click', () => {
+            scale = Math.max(0.2, scale / 1.25);
+            updateCanvasTransform();
+        });
+        document.getElementById('btn-zoom-reset').addEventListener('click', resetZoomAndPan);
     </script>
 </body>
 </html>
